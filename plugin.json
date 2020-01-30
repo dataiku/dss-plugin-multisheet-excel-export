@@ -1,0 +1,15 @@
+{
+    "id" : "multisheet-excel-export",
+    "version" : "1.0.0",
+
+
+    "meta" : {
+        "label" : "Multisheet Excel Export",
+        "description" : "Export multiple datasets to one xlsx file with multiple sheets",
+        "author" : "Dataiku (Kasim PATEL)",
+        "icon" : "icon-file",
+        "licenseInfo" : "Apache Software License",
+        "url" : "https://www.dataiku.com",
+        "tags" : ["Productivity"]
+    }
+}

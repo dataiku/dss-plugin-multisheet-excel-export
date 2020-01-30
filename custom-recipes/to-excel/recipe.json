@@ -1,0 +1,49 @@
+{
+    "meta" : {
+        "label" : "Multisheet Excel Export",
+        "description" : "Take multiple datasets as input and output a multi sheet xlsx file",
+        "icon" : "icon-file"
+    },
+
+    "kind" : "PYTHON",
+    "selectableFromDataset": "first_dataset",
+
+    "inputRoles" : [
+        {
+            "name": "dataset",
+            "label": "Dataset",
+            "arity": "NARY",
+            "acceptsDataset": true
+        }
+    ],
+
+    "outputRoles" : [
+        {
+            "name": "folder",
+            "label": "Folder containing excel workbook",
+            "description": "Folder containing excel workbook with multiple sheets from the input datasets",
+            "arity": "UNARY",
+            "acceptsDataset": false,
+            "acceptsManagedFolder": true
+        }
+    ],
+
+    "params": [
+        {
+            "name": "sheet_names",
+            "label": "Name of the Sheets",
+            "type": "STRINGS",
+            "mandatory": true
+        },
+        {
+            "name": "output_workbook_name",
+            "label": "Name of the Excel Workbook",
+            "type": "STRING",
+            "defaultValue": "output",
+            "mandatory": true
+        }
+
+
+    ],
+    "resourceKeys" : []
+}
