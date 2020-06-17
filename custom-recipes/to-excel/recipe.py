@@ -1,42 +1,32 @@
-import logging
-from dataiku import pandasutils as pdu
+"""
+Custom recipe for Excel Multi Sheet Exporter
+"""
+
 import pandas as pd
-import re
 import dataiku
-import dataikuapi
-from dataiku import api_client as client
-from dataiku.core.sql import SQLExecutor2
-import json, time, logging
+import logging
 from dataiku.customrecipe import *
 
+from utils import datasets_to_xlsx
+
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
 
-# Prepare and check parameters
+input_datasets_ids = get_input_names_for_role('dataset')
+input_datasets_names = [name.split('.')[-1] for name in input_datasets_ids]
 
-output_first_names = get_output_names_for_role('folder')
-output_first_name = output_first_names[0]
-output_folder = dataiku.Folder(output_first_names[0])
-path = output_folder.get_path()
+# Retrieve the list of output folders, should contain unique element
+output_folder_id = get_output_names_for_role('folder')
+output_folder_name = output_folder_id[0]
+output_folder = dataiku.Folder(output_folder_name)
 
-input_names = get_input_names_for_role('dataset')
-sheet_names = get_recipe_config()['sheet_names']
+input_config = get_recipe_config()
+workbook_name = input_config.get('output_workbook_name')
+if not str.isidentifier(workbook_name):
+    raise ValueError("The input parameter workbook_name is not a valid identifier. "
+                     "See the definition of an identifier at "
+                     "https://docs.python.org/3/library/stdtypes.html?highlight=isidentifier#str.isidentifier")
 
-def get_input_dataset(role, i):
-    names = get_input_names_for_role(role)
-    return dataiku.Dataset(names[i]) if len(names) > 0 else None
+excel_sheet_abs_path = os.path.join(output_folder.get_path(), '{}.xlsx'.format(workbook_name))
 
-workbook_name = get_recipe_config()['output_workbook_name']
-
-writer = pd.ExcelWriter(path + '/' + workbook_name + '.xlsx', engine='openpyxl')
-
-# Write datasets to workbook
-
-def datasets_to_xlsx(input_names_list, sheet_name_list, writer_name):
-    for i in range(len(input_names_list)):
-        dataset = get_input_dataset('dataset', i)
-        dataset_df = dataset.get_dataframe()
-        dataset_df.to_excel(writer, sheet_name= sheet_name_list[i], index = False)
-        logger.info("Writing"+ input_names_list[i])
-    writer.save()
-    
-datasets_to_xlsx(input_names, sheet_names, writer)
+datasets_to_xlsx(input_datasets_names, excel_sheet_abs_path)
