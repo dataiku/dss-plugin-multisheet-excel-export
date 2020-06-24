@@ -20,6 +20,7 @@ def datasets_to_xlsx(input_datasets_names, xlsx_abs_path):
     :return:
     """
     writer = pd.ExcelWriter(xlsx_abs_path, engine='openpyxl')
+    logger.info("Input names of the sheet: {}".format(input_datasets_names))
     for name in input_datasets_names:
         logger.info("Writing dataset {} into excel sheet...".format(name))
         dataset = dataiku.Dataset(name)
@@ -27,3 +28,4 @@ def datasets_to_xlsx(input_datasets_names, xlsx_abs_path):
         df.to_excel(writer, sheet_name=name, index=False)
         logger.info("Finished writing dataset {} into excel sheet.".format(name))
     writer.save()
+    print("Finished full xls write")

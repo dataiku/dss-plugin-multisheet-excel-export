@@ -1,7 +1,7 @@
 {
     "meta" : {
         "label" : "Multi-Sheet Excel Export",
-        "description" : "Take multiple datasets as input and output a multi sheet xlsx file",
+        "description" : "Take multiple datasets as input and output a multi-sheet xlsx file",
         "icon" : "icon-file"
     },
 
@@ -38,7 +38,6 @@
             "defaultValue": "output",
             "mandatory": true
         }
-
 
     ],
     "resourceKeys" : []
