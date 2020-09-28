@@ -6,8 +6,10 @@ import pandas as pd
 import dataiku
 import logging
 from dataiku.customrecipe import *
+import os
 
-from utils import datasets_to_xlsx
+from xlsx_writer import datasets_to_xlsx
+from cache_utils import CustomTmpFile
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
@@ -40,8 +42,21 @@ if not str.isidentifier(workbook_name):
                      "See the definition of an identifier at "
                      "https://docs.python.org/3/library/stdtypes.html?highlight=isidentifier#str.isidentifier")
 
-excel_sheet_abs_path = os.path.join(output_folder.get_path(), '{}.xlsx'.format(workbook_name))
-logger.info("Intend to write the output xls file to the following location: {}".format(excel_sheet_abs_path))
+output_folder.get_path()
 
-datasets_to_xlsx(input_datasets_names, excel_sheet_abs_path)
+tmp_file_helper = CustomTmpFile()
+tmp_file_path = tmp_file_helper.get_temporary_cache_file('{}.xlsx'.format(workbook_name))
+logger.info("Intend to write the output xls file to the following location: {}".format(tmp_file_path))
+
+dataframes_input = []
+for name in input_datasets_names:
+    ds = dataiku.Dataset(name)
+    df = ds.get_dataframe()
+    dataframes_input.append(df)
+
+datasets_to_xlsx(input_datasets_names, dataframes_input, tmp_file_path)
+# Stream on file and upload to output_folder
+output_folder.upload_file(tmp_file_path)
+tmp_file_helper.destroy_cache()
+
 logger.info("Ended recipe processing.")

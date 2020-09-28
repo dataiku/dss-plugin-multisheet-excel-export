@@ -6,7 +6,7 @@
     "meta" : {
         "label" : "Multisheet Excel Export",
         "description" : "Export multiple datasets to one xlsx file with multiple sheets",
-        "author" : "Dataiku (Kasim PATEL)",
+        "author" : "Dataiku (Kasim PATEL, Thibault DESFONTAINES)",
         "icon" : "icon-file",
         "licenseInfo" : "Apache Software License",
         "url" : "https://www.dataiku.com/dss/plugins/info/multisheet-excel-export",
