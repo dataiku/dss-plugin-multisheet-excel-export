@@ -8,7 +8,7 @@ import logging
 from dataiku.customrecipe import *
 import os
 
-from xlsx_writer import datasets_to_xlsx
+from xlsx_writer import datasets_to_xlsx, dataframes_to_xlsx
 from cache_utils import CustomTmpFile
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,8 @@ for name in input_datasets_names:
     df = ds.get_dataframe()
     dataframes_input.append(df)
 
-datasets_to_xlsx(input_datasets_names, dataframes_input, tmp_file_path)
+
+dataframes_to_xlsx(input_datasets_names, dataframes_input, tmp_file_path)
 # Stream on file and upload to output_folder
 output_folder.upload_file(tmp_file_path)
 tmp_file_helper.destroy_cache()
