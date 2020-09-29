@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 """
 Custom recipe for Excel Multi Sheet Exporter
 """
@@ -8,7 +10,7 @@ import logging
 from dataiku.customrecipe import *
 import os
 
-from xlsx_writer import datasets_to_xlsx, dataframes_to_xlsx
+from xlsx_writer import dataframes_to_xlsx
 from cache_utils import CustomTmpFile
 
 logger = logging.getLogger(__name__)
@@ -42,22 +44,25 @@ if not str.isidentifier(workbook_name):
                      "See the definition of an identifier at "
                      "https://docs.python.org/3/library/stdtypes.html?highlight=isidentifier#str.isidentifier")
 
-output_folder.get_path()
-
+# Should this be xlsx or xls ?
+output_file_name = '{}.xlsx'.format(workbook_name)
 tmp_file_helper = CustomTmpFile()
-tmp_file_path = tmp_file_helper.get_temporary_cache_file('{}.xlsx'.format(workbook_name))
+tmp_file_path = tmp_file_helper.get_temporary_cache_file(output_file_name)
 logger.info("Intend to write the output xls file to the following location: {}".format(tmp_file_path))
 
-dataframes_input = []
+# Fetch dataframes
+input_df = {}
 for name in input_datasets_names:
     ds = dataiku.Dataset(name)
     df = ds.get_dataframe()
-    dataframes_input.append(df)
+    input_df[name] = df
 
+dataframes_to_xlsx(input_df, tmp_file_path)
 
-dataframes_to_xlsx(input_datasets_names, dataframes_input, tmp_file_path)
-# Stream on file and upload to output_folder
-output_folder.upload_file(tmp_file_path)
+with open(tmp_file_path, 'rb', encoding=None) as f:
+    output_folder.upload_stream(output_file_name, f)
+
+# output_folder.upload_file(path=output_file_name, file_path=tmp_file_path)
 tmp_file_helper.destroy_cache()
 
 logger.info("Ended recipe processing.")

@@ -1,5 +1,5 @@
 from unittest import TestCase
-from xlsx_writer import datasets_to_xlsx, dataframes_to_xlsx
+from xlsx_writer import dataframes_to_xlsx
 from cache_utils import CustomTmpFile
 import os
 import pandas as pd
@@ -9,8 +9,8 @@ import pdb
 class Test(TestCase):
 
     def setUp(self) -> None:
-        self.input_data = '/Users/thibaultdesfontaines/dku-isolated-sandbox/106-multi-excel-sheet-exporter/dss-plugin-multisheet-excel-export/data'
-        self.output_folder = '/Users/thibaultdesfontaines/dku-isolated-sandbox/106-multi-excel-sheet-exporter/dss-plugin-multisheet-excel-export/python-test/test_output'
+        self.input_data = '../data'
+        self.output_folder = '../python-test/test_output'
         self.names = []
         self.dataframes = []
         available_csv = os.listdir(self.input_data)
@@ -25,15 +25,7 @@ class Test(TestCase):
 
     def test_datasets_to_xlsx(self):
         output_file = os.path.join(self.output_folder, 'sample_test.xlsx')
-        dataframes_to_xlsx(self.names, self.dataframes, output_file)
-        df = pd.read_excel(output_file)
-
-    def test_datasets_to_xlsx(self):
-        output_file_helper = CustomTmpFile()
-        output_file = output_file_helper.get_temporary_cache_file('sample_test.xlsx')
-        dataframes_to_xlsx(self.names, self.dataframes, output_file)
-        df = pd.read_excel(output_file)
-        output_file_helper.destroy_cache()
+        dataframes_to_xlsx(self.tables, output_file)
 
     def test_read_excel(self):
         output_file = os.path.join(self.output_folder, 'sample_test.xlsx')
