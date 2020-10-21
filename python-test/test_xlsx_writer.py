@@ -8,8 +8,8 @@ import pandas as pd
 class Test(TestCase):
 
     def setUp(self) -> None:
-        self.input_data = '../data'
-        self.output_folder = '../python-test/test_output'
+        self.input_data = './data'
+        self.output_folder = './python-test/test_output'
         self.names = []
         self.dataframes = []
         available_csv = os.listdir(self.input_data)
