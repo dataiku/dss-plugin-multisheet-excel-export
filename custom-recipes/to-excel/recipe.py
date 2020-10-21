@@ -48,7 +48,7 @@ tmp_file_helper = CustomTmpFile()
 tmp_file_path = tmp_file_helper.get_temporary_cache_file(output_file_name)
 logger.info("Intend to write the output xls file to the following location: {}".format(tmp_file_path))
 
-# Fetch dataframes
+# Fetch dataframes in memory
 input_df = {}
 for name in input_datasets_names:
     ds = dataiku.Dataset(name)
