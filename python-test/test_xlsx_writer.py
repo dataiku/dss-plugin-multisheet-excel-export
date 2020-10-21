@@ -25,10 +25,6 @@ class Test(TestCase):
     def test_datasets_to_xlsx(self):
         output_file = os.path.join(self.output_folder, 'sample_test.xlsx')
         dataframes_to_xlsx(self.tables, output_file)
-
-    def test_read_excel(self):
-        output_file = os.path.join(self.output_folder, 'sample_test.xlsx')
         df = pd.read_excel(output_file, sheet_name="customers")
         assert len(self.tables["customers"]) == len(df)
-
-
+        os.remove(output_file)
