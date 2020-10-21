@@ -4,11 +4,9 @@
 Custom recipe for Excel Multi Sheet Exporter
 """
 
-import pandas as pd
 import dataiku
 import logging
 from dataiku.customrecipe import *
-import os
 
 from xlsx_writer import dataframes_to_xlsx
 from cache_utils import CustomTmpFile

@@ -3,7 +3,6 @@ from xlsx_writer import dataframes_to_xlsx
 from cache_utils import CustomTmpFile
 import os
 import pandas as pd
-import pdb
 
 
 class Test(TestCase):

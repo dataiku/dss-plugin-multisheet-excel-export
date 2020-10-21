@@ -6,7 +6,6 @@ Utility functions for conversion to Excel.
 Conversion is based on Pandas feature conversion to xlsx.
 """
 
-import dataiku
 import logging
 import pandas as pd
 
