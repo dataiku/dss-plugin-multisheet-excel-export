@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import logging
 import os
 import pwd
-import logging
 import tempfile
 
 logger = logging.getLogger(__name__)

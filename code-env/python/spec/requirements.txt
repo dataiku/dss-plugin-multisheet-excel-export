@@ -1,2 +1,2 @@
 openpyxl==3.0.5
-# do not put pandas here (already handled by DSS internal)
+pathvalidate==2.3.0
