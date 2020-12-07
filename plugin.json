@@ -9,7 +9,7 @@
         "author" : "Dataiku (Kasim PATEL, Thibault DESFONTAINES)",
         "icon" : "icon-file",
         "licenseInfo" : "Apache Software License",
-        "url" : "https://www.dataiku.com/dss/plugins/info/multisheet-excel-export",
+        "url" : "https://www.dataiku.com/product/plugins/multisheet-excel-export",
         "tags" : ["Productivity"]
     }
 }
