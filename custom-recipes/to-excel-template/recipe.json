@@ -1,0 +1,58 @@
+{
+    "meta" : {
+        "label" : "Multi-Sheet Export to Existing Excel Template",
+        "description" : "Take multiple datasets as input, a dataset to excel mapping, and an existing excel template, and output the updated xlsx file to a folder",
+        "icon" : "icon-puzzle-piece"
+    },
+
+    "kind" : "PYTHON",
+    "selectableFromDataset": "input_dataset2",
+
+    "inputRoles" : [
+        {
+            "name": "input_dataset2",
+            "label": "Input datasets to export as sheet",
+            "arity": "NARY",
+            "required": true,
+            "acceptsDataset": true
+        },
+       {
+            "name": "input_folder_with_template",
+            "label": "Input managed folder containing template",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": false,
+            "acceptsManagedFolder": true
+        }
+    ],
+
+    "outputRoles" : [
+        {
+            "name": "folder",
+            "label": "Folder to save the edited template",
+            "description": "Folder containing excel workbook - the updated template with the input datsets",
+            "arity": "UNARY",
+            "acceptsDataset": false,
+            "acceptsManagedFolder": true,
+            "required": true
+        }
+    ],
+    "params": [
+        {
+            "name": "output_workbook_name",
+            "label": "Name of the output Excel Workbook",
+            "type": "STRING",
+            "defaultValue": "output",
+            "mandatory": true
+        },
+        {
+            "name": "mapping",
+            "label": "Map Dataset to Named Range (case sensitive)",
+            "description": "Please map all input datasets (keys) to their respective named range (values). Example: Dataset1 -> Overview, where 'Overview' is the exact named range, identifying where Dataset1 will be inserted into the Excel Template.",
+            "type": "MAP",
+            "mandatory": true
+        }
+        ],
+
+    "resourceKeys" : []
+}

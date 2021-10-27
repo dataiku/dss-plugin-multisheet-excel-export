@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "recipes": [
+    {
+      "instance": "DSS9",
+      "projectKey": "CREDITCARDFRAUDFINAL",
+      "recipeName": "compute_test3",
+      "path": "CREDITCARDFRAUDFINAL/compute_test3.py",
+      "contentHash": 169543376,
+      "dataBlobId": "33d4bbc1ccce48e98d710ebc97dcd807",
+      "versionNumber": 3
+    }
+  ],
+  "plugins": []
+}
