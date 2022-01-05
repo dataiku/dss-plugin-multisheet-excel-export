@@ -49,7 +49,7 @@ def dataframes_to_xlsx_template(input_dataframes_names, mapping, tmp_file_path, 
     loaded_excel_workbook = load_workbook(filename = tmp_file_path)
     writer = pd.ExcelWriter(tmp_file_path, engine='openpyxl')
     writer.excel_workbook = loaded_excel_workbook
-    writer.sheets = dict((sheet.title, sheet) for sheet in loaded_excel_workbook.worksheets) # copy existing sheets into writer
+    writer.sheets = dict((sheetname.title, sheetname) for sheetname in loaded_excel_workbook.worksheets) # copy existing sheets into writer
 
     for name in input_dataframes_names:
         df = dataframe_provider(name)
