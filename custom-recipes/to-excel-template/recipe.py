@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Export to Exis
 input_datasets_ids = get_input_names_for_role('input_dataset2')
 if len(input_datasets_ids) == 0:
     logger.warning("Received no input datasets ids. input_datasets_ids={}".format(input_datasets_ids))
-# make a list of input datasets
+# make a list of input datasetsbook.defined_names[named_range]
 input_datasets_names = [name.split('.')[-1] for name in input_datasets_ids]
 if len(input_datasets_names) == 0:
     logger.warning("Received no input datasets names. input_datasets_ids={}, input_datasets_names={}".format(
@@ -63,12 +63,12 @@ except ValidationError as e:
 
 # set up named range mapping
 mapping = input_config.get('mapping')
-for dataset in input_datasets_names:
-    if dataset in mapping:
+for dataset, named_range in mapping.items():
+    if dataset in input_datasets_names:
         continue
     else:
-        logger.warning("Received input received recipe config: {}".format(input_config))
-        raise ValueError('Could not find the named range mapping for dataset: {}'.format(dataset))
+        logger.warning("Received these input received recipe config parameters: {}".format(input_config))
+        raise ValueError('The dataset, called {}, mapped to the Named Range {}, does not exist'.format(dataset, mapping[dataset]))
 
 ### Start Work ###
 
