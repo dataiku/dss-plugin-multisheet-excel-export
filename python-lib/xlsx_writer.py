@@ -9,6 +9,7 @@ Conversion is based on Pandas feature conversion to xlsx.
 import logging
 import pandas as pd
 from openpyxl import load_workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
 import re
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,28 @@ def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider
         logger.info("Finished writing dataset {} into excel sheet.".format(name))
     writer.save()
     logger.info("Done writing output xlsx file")
+
+def dataframes_to_update(input_dataframes_names, xlsx_abs_path, tmp_file_path, dataframe_provider, append):
+    loaded_excel_workbook = load_workbook(xlsx_abs_path)
+
+    sheet_names=loaded_excel_workbook.sheetnames
+
+    for name in input_dataframes_names:
+        if name in sheet_names:
+            if append:
+                for r in dataframe_to_rows(dataframe_provider(name), index=False, header=False):
+                    loaded_excel_workbook[name].append(r)
+            else:
+                idx=loaded_excel_workbook.sheetnames.index(name)
+                del loaded_excel_workbook[name]
+                ws=loaded_excel_workbook.create_sheet(name,idx)
+                for r in dataframe_to_rows(dataframe_provider(name), index=False, header=True):
+                    loaded_excel_workbook[name].append(r)
+        else:
+            ws=loaded_excel_workbook.create_sheet(name)
+            for r in dataframe_to_rows(dataframe_provider(name), index=False, header=True):
+                loaded_excel_workbook[name].append(r)
+    loaded_excel_workbook.save(tmp_file_path)
 
 
 def dataframes_to_xlsx_template(input_dataframes_names, mapping, tmp_file_path, dataframe_provider):
