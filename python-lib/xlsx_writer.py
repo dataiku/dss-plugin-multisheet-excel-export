@@ -15,10 +15,6 @@ import re
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
 
-# input_dataframe_names = names of the tables being inserted into template
-# df_map = mapping dataframe from datasets to excel
-#
-
 
 def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider):
     """
