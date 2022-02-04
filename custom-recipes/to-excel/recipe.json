@@ -37,6 +37,23 @@
             "type": "STRING",
             "defaultValue": "output",
             "mandatory": true
+        },
+        {
+            "name": "update_sheets",
+            "label": "Update existing Workbook",
+            "description": "Retains all sheets in Workbook",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "mandatory": false
+        },
+        {
+            "name": "append_data",
+            "label": "Append data",
+            "description": "Append data instead of overwriting",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "mandatory": false,
+            "visibilityCondition": "model.update_sheets"
         }
 
     ],
