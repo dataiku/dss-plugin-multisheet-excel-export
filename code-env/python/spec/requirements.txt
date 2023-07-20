@@ -1,2 +1,4 @@
 openpyxl==3.0.5
 pathvalidate==2.3.0
+pandas
+cython
