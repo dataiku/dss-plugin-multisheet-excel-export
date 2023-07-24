@@ -11,8 +11,8 @@ from pathvalidate import ValidationError, validate_filename
 import dataiku
 from dataiku.customrecipe import get_input_names_for_role, get_output_names_for_role, get_recipe_config
 
-from cache_utils import CustomTmpFile
-from xlsx_writer import dataframes_to_xlsx
+from python_lib.cache_utils import CustomTmpFile
+from python_lib.xlsx_writer import dataframes_to_xlsx
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
