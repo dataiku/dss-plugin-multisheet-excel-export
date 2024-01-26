@@ -5,6 +5,7 @@ Custom recipe for Excel Multi Sheet Exporter
 """
 
 import logging
+import tempfile
 
 from pathvalidate import ValidationError, validate_filename
 
@@ -13,7 +14,6 @@ from dataiku.customrecipe import get_input_names_for_role
 from dataiku.customrecipe import get_output_names_for_role
 from dataiku.customrecipe import get_recipe_config
 
-from cache_utils import CustomTmpFile
 from xlsx_writer import dataframes_to_xlsx
 
 logger = logging.getLogger(__name__)
@@ -50,15 +50,14 @@ except ValidationError as e:
     raise ValueError(f"{e}\n")
 
 
-tmp_file_helper = CustomTmpFile()
-tmp_file_path = tmp_file_helper.get_temporary_cache_file(output_file_name)
-logger.info("Intend to write the output xls file to the following location: {}".format(tmp_file_path))
+with tempfile.NamedTemporaryFile() as tmp_file:
+    tmp_file_path = tmp_file.name
+    logger.info("Intend to write the output xls file to the following location: {}".format(tmp_file_path))
 
-dataframes_to_xlsx(input_datasets_names, tmp_file_path, lambda name: dataiku.Dataset(name).get_dataframe())
+    dataframes_to_xlsx(input_datasets_names, tmp_file_path, lambda name: dataiku.Dataset(name).get_dataframe())
 
-with open(tmp_file_path, 'rb', encoding=None) as f:
-    output_folder.upload_stream(output_file_name, f)
+    with open(tmp_file_path, 'rb', encoding=None) as f:
+        output_folder.upload_stream(output_file_name, f)
 
-tmp_file_helper.destroy_cache()
 
 logger.info("Ended recipe processing.")
