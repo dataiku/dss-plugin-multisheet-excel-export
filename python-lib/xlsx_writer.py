@@ -29,12 +29,11 @@ def format_worksheet(worksheet):
 
     alignment = Alignment(vertical='bottom')
 
-    # border styles do not work on full row selection
-    header_row = worksheet.row_dimensions[0]
-    header_row.font = font
-    header_row.fill = fill
-    header_row.border = border
-    header_row.alignment = alignment
+    for header_cell in worksheet[1]:
+        header_cell.font = font
+        header_cell.fill = fill
+        header_cell.border = border
+        header_cell.alignment = alignment
 
 def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider):
     """
