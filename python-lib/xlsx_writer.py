@@ -13,21 +13,30 @@ from openpyxl.styles.borders import Border
 from openpyxl.styles.colors import WHITE
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
+from openpyxl.worksheet.worksheet import Worksheet
 import pandas as pd
 
-FONT = "Calibri"
-SIZE = 11
 DATAIKU_TEAL = "FF2AB1AC"
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
 
-def format_header(worksheet):
-    font = Font(name=FONT, size=SIZE, color=WHITE, bold=True)
-    fill = PatternFill("solid", fgColor=DATAIKU_TEAL)
+def style_header(worksheet: Worksheet, 
+                  font_name: str = "Calibri", 
+                  font_size: int = 11, 
+                  font_color : str = WHITE, 
+                  background_color : str = DATAIKU_TEAL,
+                  bold : bool = True
+                 ):
+    """
+    Style header
+    """
+    font = Font(name=font_name, size=font_size, color=font_color, bold=bold)
+    fill = PatternFill("solid", fgColor=background_color)
 
     no_border_side = Side(border_style=None)
     border = Border(left=no_border_side, right=no_border_side, top=no_border_side, bottom=no_border_side)
+    # TODO: check if need for border
 
     alignment = Alignment(vertical='bottom', horizontal='center')
 
@@ -37,7 +46,10 @@ def format_header(worksheet):
         header_cell.border = border
         header_cell.alignment = alignment
 
-def format_column_width(worksheet):
+def format_column_width(worksheet: Worksheet):
+    """
+    Resize columns based on the lenght of the header
+    """
     dimension_holder = DimensionHolder(worksheet=worksheet)
 
     for column in range(worksheet.min_column, worksheet.max_column + 1):
@@ -70,7 +82,7 @@ def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider
 
         worksheet = writer.sheets[name] # TODO: maybe put getter
 
-        format_header(worksheet)
+        style_header(worksheet)
         format_column_width(worksheet)
 
         logger.info("Finished writing dataset {} into excel sheet.".format(name))
