@@ -20,14 +20,14 @@ DATAIKU_TEAL = "FF2AB1AC"
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
 
-def format_worksheet(worksheet):
+def format_header(worksheet):
     font = Font(name=FONT, size=SIZE, color=WHITE, bold=True)
     fill = PatternFill("solid", fgColor=DATAIKU_TEAL)
 
     no_border_side = Side(border_style=None)
     border = Border(left=no_border_side, right=no_border_side, top=no_border_side, bottom=no_border_side)
 
-    alignment = Alignment(vertical='bottom')
+    alignment = Alignment(vertical='bottom', horizontal='center')
 
     for header_cell in worksheet[1]:
         header_cell.font = font
@@ -52,7 +52,7 @@ def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider
         df.to_excel(writer, sheet_name=name, index=False, encoding='utf-8')
 
         worksheet = writer.sheets[name] # TODO: maybe put getter
-        format_worksheet(worksheet)
+        format_header(worksheet)
 
         logger.info("Finished writing dataset {} into excel sheet.".format(name))
     writer.save()
