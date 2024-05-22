@@ -17,6 +17,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 import pandas as pd
 
 DATAIKU_TEAL = "FF2AB1AC"
+LETTER_WIDTH = 1.23 # Approximative letter width to scale column width
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
@@ -36,17 +37,17 @@ def style_header(worksheet: Worksheet,
 
     no_border_side = Side(border_style=None)
     border = Border(left=no_border_side, right=no_border_side, top=no_border_side, bottom=no_border_side)
-    # TODO: check if need for border
 
     alignment = Alignment(vertical='bottom', horizontal='center')
 
+    # TODO : check there is a header row
     for header_cell in worksheet[1]:
         header_cell.font = font
         header_cell.fill = fill
         header_cell.border = border
         header_cell.alignment = alignment
 
-def format_column_width(worksheet: Worksheet):
+def auto_size_column_width(worksheet: Worksheet):
     """
     Resize columns based on the lenght of the header
     """
@@ -54,13 +55,14 @@ def format_column_width(worksheet: Worksheet):
 
     for column in range(worksheet.min_column, worksheet.max_column + 1):
         column_letter = get_column_letter(column)
+        # TODO : check there is a header row
         header_cell = worksheet[f"{column_letter}1"]
-        header_cell_size = len(header_cell.value) * 1.23 # TODO add constant and explanation
+        column_target_width = len(header_cell.value) * LETTER_WIDTH
+
         dimension_holder[column_letter] =  ColumnDimension(worksheet, 
                                                            min=column, 
                                                            max=column,
-                                                           width=header_cell_size)
-
+                                                           width=column_target_width)
     worksheet.column_dimensions = dimension_holder
 
 
@@ -80,11 +82,14 @@ def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider
         logger.info("Writing dataset into excel sheet...")
         df.to_excel(writer, sheet_name=name, index=False, encoding='utf-8')
 
-        worksheet = writer.sheets[name] # TODO: maybe put getter
+        worksheet = writer.sheets.get(name)
 
-        style_header(worksheet)
-        format_column_width(worksheet)
+        if worksheet is not None:
+            logger.info(f"Styling excel sheet...")
+            style_header(worksheet)
+            auto_size_column_width(worksheet)
 
         logger.info("Finished writing dataset {} into excel sheet.".format(name))
+
     writer.save()
     logger.info("Done writing output xlsx file")
