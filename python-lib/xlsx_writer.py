@@ -11,6 +11,8 @@ import logging
 from openpyxl.styles import Alignment, Font, PatternFill, Side
 from openpyxl.styles.borders import Border
 from openpyxl.styles.colors import WHITE
+from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 import pandas as pd
 
 FONT = "Calibri"
@@ -35,6 +37,21 @@ def format_header(worksheet):
         header_cell.border = border
         header_cell.alignment = alignment
 
+def format_column_width(worksheet):
+    dimension_holder = DimensionHolder(worksheet=worksheet)
+
+    for column in range(worksheet.min_column, worksheet.max_column + 1):
+        column_letter = get_column_letter(column)
+        header_cell = worksheet[f"{column_letter}1"]
+        header_cell_size = len(header_cell.value) * 1.23 # TODO add constant and explanation
+        dimension_holder[column_letter] =  ColumnDimension(worksheet, 
+                                                           min=column, 
+                                                           max=column,
+                                                           width=header_cell_size)
+
+    worksheet.column_dimensions = dimension_holder
+
+
 def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider):
     """
     Write the input datasets into same excel into the folder
@@ -52,7 +69,9 @@ def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider
         df.to_excel(writer, sheet_name=name, index=False, encoding='utf-8')
 
         worksheet = writer.sheets[name] # TODO: maybe put getter
+
         format_header(worksheet)
+        format_column_width(worksheet)
 
         logger.info("Finished writing dataset {} into excel sheet.".format(name))
     writer.save()
