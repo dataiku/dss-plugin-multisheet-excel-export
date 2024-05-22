@@ -30,7 +30,7 @@ def style_header(worksheet: Worksheet,
                   bold : bool = True
                  ):
     """
-    Style header
+    Style header. worksheet must have at least one row
     """
     font = Font(name=font_name, size=font_size, color=font_color, bold=bold)
     fill = PatternFill("solid", fgColor=background_color)
@@ -40,7 +40,6 @@ def style_header(worksheet: Worksheet,
 
     alignment = Alignment(vertical='bottom', horizontal='center')
 
-    # TODO : check there is a header row
     for header_cell in worksheet[1]:
         header_cell.font = font
         header_cell.fill = fill
@@ -50,12 +49,12 @@ def style_header(worksheet: Worksheet,
 def auto_size_column_width(worksheet: Worksheet):
     """
     Resize columns based on the lenght of the header
+    worksheet must have at least one row
     """
     dimension_holder = DimensionHolder(worksheet=worksheet)
 
     for column in range(worksheet.min_column, worksheet.max_column + 1):
         column_letter = get_column_letter(column)
-        # TODO : check there is a header row
         header_cell = worksheet[f"{column_letter}1"]
         column_target_width = len(header_cell.value) * LETTER_WIDTH
 
@@ -84,10 +83,17 @@ def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider
 
         worksheet = writer.sheets.get(name)
 
-        if worksheet is not None:
-            logger.info(f"Styling excel sheet...")
-            style_header(worksheet)
-            auto_size_column_width(worksheet)
+        if worksheet is None:
+            logger.warn(f"No worksheet for dataset {name}. Written but styling skipped.")
+            continue
+
+        if worksheet.min_column < 1:
+            logger.warn(f"No header row for dataset {name}. Written but styling skipped.")
+            continue
+
+        logger.info(f"Styling excel sheet...")
+        style_header(worksheet)
+        auto_size_column_width(worksheet)
 
         logger.info("Finished writing dataset {} into excel sheet.".format(name))
 
