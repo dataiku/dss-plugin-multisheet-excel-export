@@ -32,6 +32,7 @@ def style_header(worksheet: Worksheet,
     """
     Style header of the worksheet
     """
+
     if worksheet.min_column < 1:
         logger.warn(f"No header row for worksheet {worksheet}. Styling skipped.")
         return
