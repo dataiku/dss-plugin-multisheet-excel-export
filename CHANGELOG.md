@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 1.1.2](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v1.1.0) - Feature release - 2024-05
+- Style exported worksheet header
+- Auto-size columns to fit header
+
 ## [Version 1.1.1](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v1.1.0) - Chore release - 2023-08
 - Use python library to create temp file instead of a custom cache
 
