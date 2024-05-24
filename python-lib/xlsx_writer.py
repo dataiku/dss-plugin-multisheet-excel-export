@@ -19,7 +19,7 @@ import pandas as pd
 
 DATAIKU_TEAL = "FF2AB1AC"
 LETTER_WIDTH = 1.20 # Approximative letter width to scale column width
-MAX_LENGHT_TO_SHOW = 45 # Limit copied from DSS excel exporter
+MAX_LENGHT_TO_SHOW = 45 # Limit copied from DSS native excel exporter
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
@@ -58,18 +58,17 @@ def get_column_width(column: Tuple):
     header, cells = column[0], column[1:]
     lenght_header = len(str(header.value))
 
-    sum_lenght_cells = 0
+    sum_lenght_cell = 0
     max_lenght_cell = 0
-
     for cell in cells:
         lenght_cell = len(str(cell.value))
         max_lenght_cell = max(max_lenght_cell, lenght_cell)
-        sum_lenght_cells += lenght_cell
+        sum_lenght_cell += lenght_cell
 
-    average_lenght_cell = sum_lenght_cells / (len(column) + 1) # TODO: check + 1
+    average_lenght_cell = sum_lenght_cell / len(column)
     max_lenght_cell = min(max_lenght_cell, MAX_LENGHT_TO_SHOW)
     
-    if max_lenght_cell > 2 * average_lenght_cell: # max lenght much bigger than average
+    if max_lenght_cell > 2 * average_lenght_cell: # if max lenght much bigger than average
         lenght_to_show = (max_lenght_cell + average_lenght_cell) / 2
     else:
         lenght_to_show = max_lenght_cell
@@ -90,7 +89,6 @@ def auto_size_column_width(worksheet: Worksheet):
 
     for index_column, column in zip(range(worksheet.min_column, worksheet.max_column + 1), worksheet.iter_cols()):
 
-        # default dict - no need to check for column existence
         target_width = get_column_width(column)
         dimension_holder[get_column_letter(index_column)] = ColumnDimension(worksheet, 
                                                            min=index_column, 
