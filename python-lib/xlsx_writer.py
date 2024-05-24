@@ -7,6 +7,7 @@ Conversion is based on Pandas feature conversion to xlsx.
 """
 
 import logging
+from typing import Tuple
 
 from openpyxl.styles import Alignment, Font, PatternFill, Side
 from openpyxl.styles.borders import Border
@@ -17,7 +18,8 @@ from openpyxl.worksheet.worksheet import Worksheet
 import pandas as pd
 
 DATAIKU_TEAL = "FF2AB1AC"
-LETTER_WIDTH = 1.23 # Approximative letter width to scale column width
+LETTER_WIDTH = 1.20 # Approximative letter width to scale column width
+MAX_LENGHT_TO_SHOW = 45 # Limit copied from DSS excel exporter
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
@@ -51,6 +53,31 @@ def style_header(worksheet: Worksheet,
         header_cell.border = border
         header_cell.alignment = alignment
 
+def get_column_width(column: Tuple):
+
+    header, cells = column[0], column[1:]
+    lenght_header = len(str(header.value))
+
+    sum_lenght_cells = 0
+    max_lenght_cell = 0
+
+    for cell in cells:
+        lenght_cell = len(str(cell.value))
+        max_lenght_cell = max(max_lenght_cell, lenght_cell)
+        sum_lenght_cells += lenght_cell
+
+    average_lenght_cell = sum_lenght_cells / (len(column) + 1) # TODO: check + 1
+    max_lenght_cell = min(max_lenght_cell, MAX_LENGHT_TO_SHOW)
+    
+    if max_lenght_cell > 2 * average_lenght_cell: # max lenght much bigger than average
+        lenght_to_show = (max_lenght_cell + average_lenght_cell) / 2
+    else:
+        lenght_to_show = max_lenght_cell
+
+    lenght_to_show = max(lenght_to_show, lenght_header) 
+
+    return lenght_to_show * LETTER_WIDTH
+
 def auto_size_column_width(worksheet: Worksheet):
     """
     Resize columns based on the lenght of the header text
@@ -61,17 +88,14 @@ def auto_size_column_width(worksheet: Worksheet):
 
     dimension_holder = DimensionHolder(worksheet=worksheet) 
 
-    for column in range(worksheet.min_column, worksheet.max_column + 1):
-
-        column_letter = get_column_letter(column)
-        header_cell = worksheet[f"{column_letter}1"]
-        column_target_width = len(header_cell.value) * LETTER_WIDTH
+    for index_column, column in zip(range(worksheet.min_column, worksheet.max_column + 1), worksheet.iter_cols()):
 
         # default dict - no need to check for column existence
-        dimension_holder[column_letter] =  ColumnDimension(worksheet, 
-                                                           min=column, 
-                                                           max=column,
-                                                           width=column_target_width)
+        target_width = get_column_width(column)
+        dimension_holder[get_column_letter(index_column)] = ColumnDimension(worksheet, 
+                                                           min=index_column, 
+                                                           max=index_column,
+                                                           width=target_width)
     worksheet.column_dimensions = dimension_holder
 
 
