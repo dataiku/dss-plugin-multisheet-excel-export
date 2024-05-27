@@ -7,6 +7,7 @@ Conversion is based on Pandas feature conversion to xlsx.
 """
 
 import logging
+import math
 from typing import Tuple
 
 from openpyxl.styles import Alignment, Font, PatternFill, Side
@@ -55,21 +56,22 @@ def style_header(worksheet: Worksheet,
 
 def get_column_width(column: Tuple):
 
-    header, cells = column[0], column[1:]
+    header = column[0]
     lenght_header = len(str(header.value))
 
     sum_lenght_cell = 0
     max_lenght_cell = 0
-    for cell in cells:
+    for cell in column:
         lenght_cell = len(str(cell.value))
         max_lenght_cell = max(max_lenght_cell, lenght_cell)
         sum_lenght_cell += lenght_cell
 
-    average_lenght_cell = sum_lenght_cell / len(column)
+    # Computations copied from ExcelOutputFormatter.java ExcelOutputFormatter.footer
+    average_lenght_cell = math.ceil(sum_lenght_cell / (len(column) + 1))
     max_lenght_cell = min(max_lenght_cell, MAX_LENGHT_TO_SHOW)
     
     if max_lenght_cell > 2 * average_lenght_cell: # if max lenght much bigger than average
-        lenght_to_show = (max_lenght_cell + average_lenght_cell) / 2
+        lenght_to_show = int((max_lenght_cell + average_lenght_cell) / 2)
     else:
         lenght_to_show = max_lenght_cell
 
