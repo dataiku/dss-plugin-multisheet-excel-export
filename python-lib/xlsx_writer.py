@@ -20,7 +20,7 @@ import pandas as pd
 
 DATAIKU_TEAL = "FF2AB1AC"
 LETTER_WIDTH = 1.20 # Approximative letter width to scale column width
-MAX_LENGHT_TO_SHOW = 45 # Limit copied from DSS native excel exporter
+MAX_LENGTH_TO_SHOW = 45 # Limit copied from DSS native excel exporter
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
@@ -56,36 +56,36 @@ def style_header(worksheet: Worksheet,
 
 def get_column_width(column: Tuple):
     """
-    Find optimum column width based on content and header lenght
+    Find optimum column width based on content and header length
     Based on the computations of DSS native excel output formatter
     """
 
     header = column[0]
-    lenght_header = len(str(header.value))
+    length_header = len(str(header.value))
 
-    sum_lenght_cells = 0
-    max_lenght_cells = 0
+    sum_length_cells = 0
+    max_length_cells = 0
     for cell in column:
-        lenght_cell = len(str(cell.value))
-        max_lenght_cells = max(max_lenght_cells, lenght_cell)
-        sum_lenght_cells += lenght_cell
+        length_cell = len(str(cell.value))
+        max_length_cells = max(max_length_cells, length_cell)
+        sum_length_cells += length_cell
 
     # Computations from ExcelOutputFormatter.java ExcelOutputFormatter.footer
-    average_lenght_cell = math.ceil(sum_lenght_cells / (len(column) + 1))
-    max_lenght_cells = min(max_lenght_cells, MAX_LENGHT_TO_SHOW)
+    average_length_cell = math.ceil(sum_length_cells / (len(column) + 1))
+    max_length_cells = min(max_length_cells, MAX_LENGTH_TO_SHOW)
     
-    if max_lenght_cells > 2 * average_lenght_cell: # if max lenght much bigger than average
-        lenght_to_show = int((max_lenght_cells + average_lenght_cell) / 2)
+    if max_length_cells > 2 * average_length_cell: # if max length much bigger than average
+        length_to_show = int((max_length_cells + average_length_cell) / 2)
     else:
-        lenght_to_show = max_lenght_cells
+        length_to_show = max_length_cells
 
-    lenght_to_show = max(lenght_to_show, lenght_header) 
+    length_to_show = max(length_to_show, length_header) 
 
-    return lenght_to_show * LETTER_WIDTH
+    return length_to_show * LETTER_WIDTH
 
 def auto_size_column_width(worksheet: Worksheet):
     """
-    Resize columns based on the lenght of the header text
+    Resize columns based on the length of the header text
     """
     if worksheet.min_column < 1:
         logger.warn(f"No header row for worksheet {worksheet}. Column auto-size skipped.")
