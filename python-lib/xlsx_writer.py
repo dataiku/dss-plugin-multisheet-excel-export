@@ -55,25 +55,29 @@ def style_header(worksheet: Worksheet,
         header_cell.alignment = alignment
 
 def get_column_width(column: Tuple):
+    """
+    Find optimum column width based on content and header lenght
+    Based on the computations of DSS native excel output formatter
+    """
 
     header = column[0]
     lenght_header = len(str(header.value))
 
-    sum_lenght_cell = 0
-    max_lenght_cell = 0
+    sum_lenght_cells = 0
+    max_lenght_cells = 0
     for cell in column:
         lenght_cell = len(str(cell.value))
-        max_lenght_cell = max(max_lenght_cell, lenght_cell)
-        sum_lenght_cell += lenght_cell
+        max_lenght_cells = max(max_lenght_cells, lenght_cell)
+        sum_lenght_cells += lenght_cell
 
-    # Computations copied from ExcelOutputFormatter.java ExcelOutputFormatter.footer
-    average_lenght_cell = math.ceil(sum_lenght_cell / (len(column) + 1))
-    max_lenght_cell = min(max_lenght_cell, MAX_LENGHT_TO_SHOW)
+    # Computations from ExcelOutputFormatter.java ExcelOutputFormatter.footer
+    average_lenght_cell = math.ceil(sum_lenght_cells / (len(column) + 1))
+    max_lenght_cells = min(max_lenght_cells, MAX_LENGHT_TO_SHOW)
     
-    if max_lenght_cell > 2 * average_lenght_cell: # if max lenght much bigger than average
-        lenght_to_show = int((max_lenght_cell + average_lenght_cell) / 2)
+    if max_lenght_cells > 2 * average_lenght_cell: # if max lenght much bigger than average
+        lenght_to_show = int((max_lenght_cells + average_lenght_cell) / 2)
     else:
-        lenght_to_show = max_lenght_cell
+        lenght_to_show = max_lenght_cells
 
     lenght_to_show = max(lenght_to_show, lenght_header) 
 
@@ -89,13 +93,14 @@ def auto_size_column_width(worksheet: Worksheet):
 
     dimension_holder = DimensionHolder(worksheet=worksheet) 
 
-    for index_column, column in zip(range(worksheet.min_column, worksheet.max_column + 1), worksheet.iter_cols()):
+    column_indexes = range(worksheet.min_column, worksheet.max_column + 1)
+    for index_column, column in zip(column_indexes, worksheet.iter_cols()):
 
-        target_width = get_column_width(column)
+        column_width = get_column_width(column)
         dimension_holder[get_column_letter(index_column)] = ColumnDimension(worksheet, 
                                                            min=index_column, 
                                                            max=index_column,
-                                                           width=target_width)
+                                                           width=column_width)
     worksheet.column_dimensions = dimension_holder
 
 
