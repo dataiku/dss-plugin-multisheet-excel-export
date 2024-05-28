@@ -17,6 +17,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 from openpyxl.worksheet.worksheet import Worksheet
 import pandas as pd
+from pandas.io.sql import re
 
 DATAIKU_TEAL = "FF2AB1AC"
 LETTER_WIDTH = 1.20 # Approximative letter width to scale column width
@@ -103,6 +104,9 @@ def auto_size_column_width(worksheet: Worksheet):
                                                            width=column_width)
     worksheet.column_dimensions = dimension_holder
 
+def remove_timezones_from_dates(dataframe: pd.DataFrame): 
+    datetime_columns = dataframe.select_dtypes(include=['datetime64[ns, UTC]']).columns # TODO: check if only datetime type
+    dataframe.loc[:,datetime_columns] = dataframe.loc[:,datetime_columns].apply(lambda column: column.dt.tz_localize(None))
 
 def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider):
     """
@@ -116,6 +120,7 @@ def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider
 
     for name in input_dataframes_names:
         df = dataframe_provider(name)
+        remove_timezones_from_dates(df)
 
         logger.info("Writing dataset into excel sheet...")
         df.to_excel(writer, sheet_name=name, index=False, encoding='utf-8')
