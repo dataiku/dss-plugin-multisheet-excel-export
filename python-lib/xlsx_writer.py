@@ -104,7 +104,7 @@ def auto_size_column_width(worksheet: Worksheet):
                                                            width=column_width)
     worksheet.column_dimensions = dimension_holder
 
-def remove_timezones_from_dates(dataframe: pd.DataFrame): 
+def remove_timezones_from_datetimes(dataframe: pd.DataFrame): 
     datetime_columns = dataframe.select_dtypes(include=['datetime64[ns, UTC]']).columns # TODO: check if only datetime type
     dataframe.loc[:,datetime_columns] = dataframe.loc[:,datetime_columns].apply(lambda column: column.dt.tz_localize(None))
 
@@ -120,7 +120,7 @@ def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider
 
     for name in input_dataframes_names:
         df = dataframe_provider(name)
-        remove_timezones_from_dates(df)
+        remove_timezones_from_datetimes(df) # Excel does not support datetimes with timezones
 
         logger.info("Writing dataset into excel sheet...")
         df.to_excel(writer, sheet_name=name, index=False, encoding='utf-8')
