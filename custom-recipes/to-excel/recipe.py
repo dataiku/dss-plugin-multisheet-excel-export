@@ -7,11 +7,12 @@ Custom recipe for Excel Multi Sheet Exporter
 import logging
 import tempfile
 
+from pathvalidate import ValidationError, validate_filename
+
 import dataiku
 from dataiku.customrecipe import get_input_names_for_role
 from dataiku.customrecipe import get_output_names_for_role
 from dataiku.customrecipe import get_recipe_config
-from pathvalidate import ValidationError, validate_filename
 
 from xlsx_writer import dataframes_to_xlsx
 
@@ -53,7 +54,7 @@ with tempfile.NamedTemporaryFile() as tmp_file:
     tmp_file_path = tmp_file.name
     logger.info("Intend to write the output xls file to the following location: {}".format(tmp_file_path))
 
-    dataframes_to_xlsx(input_datasets_names, tmp_file_path, lambda name: dataiku.Dataset(name).get_dataframe(infer_with_pandas=False))
+    dataframes_to_xlsx(input_datasets_names, tmp_file_path, lambda name: dataiku.Dataset(name).get_dataframe())
 
     with open(tmp_file_path, 'rb', encoding=None) as f:
         output_folder.upload_stream(output_file_name, f)
