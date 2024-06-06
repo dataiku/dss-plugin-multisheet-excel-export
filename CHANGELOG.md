@@ -1,5 +1,8 @@
 # Changelog
 
+## [Version 1.1.3](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v1.1.3) - Minor release - 2024-06
+- The plugin will show up in the excel category
+
 ## [Version 1.1.2](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v1.1.2) - Feature release - 2024-05
 - Style exported worksheet header
 - Auto-size columns to fit data
