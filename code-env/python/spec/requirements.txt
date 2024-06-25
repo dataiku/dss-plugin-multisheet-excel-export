@@ -1,2 +1,2 @@
-openpyxl==3.0.5
+openpyxl==3.0.6
 pathvalidate==2.3.0
