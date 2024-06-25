@@ -54,7 +54,7 @@ with tempfile.NamedTemporaryFile() as tmp_file:
     tmp_file_path = tmp_file.name
     logger.info("Intend to write the output xls file to the following location: {}".format(tmp_file_path))
 
-    dataframes_to_xlsx(input_datasets_names, tmp_file_path, lambda name: dataiku.Dataset(name).get_dataframe())
+    dataframes_to_xlsx(input_datasets_names, tmp_file_path, lambda name: dataiku.Dataset(name).get_dataframe(infer_with_pandas=False))
 
     with open(tmp_file_path, 'rb', encoding=None) as f:
         output_folder.upload_stream(output_file_name, f)
