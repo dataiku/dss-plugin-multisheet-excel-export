@@ -1,5 +1,8 @@
 # Changelog
 
+## [Version 1.1.5](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v1.1.5) - Feature release - 2024-06
+- Export dataset conditional formatting colors (colors the cells, does not export rules)
+
 ## [Version 1.1.4](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v1.1.4) - Bug release - 2024-06
 - Fix numpy issue with DSS 13
 

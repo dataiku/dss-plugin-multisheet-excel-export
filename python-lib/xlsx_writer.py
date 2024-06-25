@@ -8,7 +8,9 @@ Conversion is based on Pandas feature conversion to xlsx.
 
 import logging
 import math
+import io
 from typing import Tuple
+from copy import copy
 
 from openpyxl.styles import Alignment, Font, PatternFill, Side
 from openpyxl.styles.borders import Border
@@ -16,11 +18,12 @@ from openpyxl.styles.colors import WHITE
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 from openpyxl.worksheet.worksheet import Worksheet
-import pandas as pd
+from openpyxl import load_workbook, Workbook
 
 DATAIKU_TEAL = "FF2AB1AC"
 LETTER_WIDTH = 1.20 # Approximative letter width to scale column width
 MAX_LENGTH_TO_SHOW = 45 # Limit copied from DSS native excel exporter
+DEFAULT_DATAIKU_SHEET_NAME = "Sheet1"
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
@@ -104,33 +107,64 @@ def auto_size_column_width(worksheet: Worksheet):
     worksheet.column_dimensions = dimension_holder
 
 
-def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider):
+
+def get_excel_worksheet(dataset):
+    logger.info(f"Getting Excel workbook from DSS dataset {dataset.short_name}...")
+    with dataset.raw_formatted_data(format="excel", format_params={ "applyColoring": True }) as stream:
+        data=stream.read()
+
+    # BytesIO allows to not write in a temp file on disk
+    memory_file = io.BytesIO(data)
+    wb=load_workbook(memory_file)
+    if DEFAULT_DATAIKU_SHEET_NAME in wb:
+        return wb[DEFAULT_DATAIKU_SHEET_NAME]
+    elif len(wb.sheetnames) == 1:
+        logger.warn(f"Default DSS default sheet name has changed from {DEFAULT_DATAIKU_SHEET_NAME} to {wb.sheetnames[0]}")
+        return wb[wb.sheetnames[0]]
+    else:
+        logger.error("Error getting Excel workbook from DSS dataset {dataset.short_name}, this dataset will not be exported")
+        return None
+
+def copy_sheet_to_workbook(source_sheet, target_workbook):
+    logger.info(f"Copying sheet {source_sheet.title} to target workbook")
+    target_sheet = target_workbook.create_sheet(source_sheet.title)
+    for row in source_sheet:
+        for cell in row:
+            new_cell = target_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
+            if cell.has_style:
+                new_cell.font = copy(cell.font)
+                new_cell.border = copy(cell.border)
+                new_cell.fill = copy(cell.fill)
+
+    return target_sheet
+
+def dataframes_to_xlsx(input_dataset_names, xlsx_abs_path, dataset_provider):
     """
     Write the input datasets into same excel into the folder
-    :param input_datasets_names:
-    :param writer:
-    :return:
+    :param input_dataset_names: the list of dataset to put in a single excel file, using one sheet (excel tab) per dataset
+    :param xlsx_abs_path: the temporary path where to write the final excel file
+    :param dataset_provider: a lambda used to get the dataset
     """
-    logger.info("Writing output xlsx file ...")
-    writer = pd.ExcelWriter(xlsx_abs_path, engine='openpyxl')
 
-    for name in input_dataframes_names:
-        df = dataframe_provider(name)
+    logger.info(f"Building output xlsx file ... {xlsx_abs_path}")
+    # The final workbook where all dataset sheets will be written
+    workbook = Workbook()
+    # remove the default sheet created
+    workbook.remove(workbook.active)
 
-        logger.info("Writing dataset into excel sheet...")
-        df.to_excel(writer, sheet_name=name, index=False, encoding='utf-8')
-
-        worksheet = writer.sheets.get(name)
-
-        if worksheet is None:
-            logger.warn(f"No worksheet for dataset {name}. Written but styling skipped.")
+    for name in input_dataset_names:
+        ds_worksheet = get_excel_worksheet(dataset_provider(name))
+        if ds_worksheet is None:
             continue
+        ds_worksheet.title = name
+        
+        target_sheet = copy_sheet_to_workbook(ds_worksheet, workbook)
+        
+        logger.info(f"Styling excel sheet {target_sheet.title} in target workbook")
+        style_header(target_sheet)
+        auto_size_column_width(target_sheet)
 
-        logger.info(f"Styling excel sheet...")
-        style_header(worksheet)
-        auto_size_column_width(worksheet)
-
-        logger.info("Finished writing dataset {} into excel sheet.".format(name))
-
-    writer.save()
+        logger.info(f"Finished writing dataset {name} into excel sheet.")
+        
+    workbook.save(xlsx_abs_path)
     logger.info("Done writing output xlsx file")
