@@ -1,5 +1,8 @@
 # Changelog
 
+## [Version 1.1.4](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v1.1.4) - Bug release - 2024-06
+- Fix numpy issue with DSS 13
+
 ## [Version 1.1.3](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v1.1.3) - Minor release - 2024-06
 - The plugin will show up in the excel category
 
