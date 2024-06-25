@@ -1,10 +1,10 @@
-Current Version: 1.0.0
-
 # Plugin information
 
 This plugin converts several DSS datasets to one multi-sheet excel (`.xlsx`) file containing one sheet per input dataset.
 
 # Prerequisites
+
+Warning: for now, the plugin is not compatible with Python3.8+
 
 The installation setup for this plugin follows the standard DSS code environment creation procedure.
 This plugin relies on the [openpyxl](https://openpyxl.readthedocs.io/en/stable/) Python module.
