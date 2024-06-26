@@ -18,12 +18,12 @@ from openpyxl.styles.colors import WHITE
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl import load_workbook, Workbook
+from openpyxl import Workbook
 
 DATAIKU_TEAL = "FF2AB1AC"
 LETTER_WIDTH = 1.20 # Approximative letter width to scale column width
 MAX_LENGTH_TO_SHOW = 45 # Limit copied from DSS native excel exporter
-DEFAULT_DATAIKU_SHEET_NAME = "Sheet1"
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
@@ -108,22 +108,7 @@ def auto_size_column_width(worksheet: Worksheet):
 
 
 
-def get_excel_worksheet(dataset):
-    logger.info(f"Getting Excel workbook from DSS dataset {dataset.short_name}...")
-    with dataset.raw_formatted_data(format="excel", format_params={ "applyColoring": True }) as stream:
-        data=stream.read()
 
-    # BytesIO allows to not write in a temp file on disk
-    memory_file = io.BytesIO(data)
-    wb=load_workbook(memory_file)
-    if DEFAULT_DATAIKU_SHEET_NAME in wb:
-        return wb[DEFAULT_DATAIKU_SHEET_NAME]
-    elif len(wb.sheetnames) == 1:
-        logger.warn(f"Default DSS default sheet name has changed from {DEFAULT_DATAIKU_SHEET_NAME} to {wb.sheetnames[0]}")
-        return wb[wb.sheetnames[0]]
-    else:
-        logger.error("Error getting Excel workbook from DSS dataset {dataset.short_name}, this dataset will not be exported")
-        return None
 
 def copy_sheet_to_workbook(source_sheet, target_workbook):
     logger.info(f"Copying sheet {source_sheet.title} to target workbook")
@@ -138,7 +123,7 @@ def copy_sheet_to_workbook(source_sheet, target_workbook):
 
     return target_sheet
 
-def dataframes_to_xlsx(input_dataset_names, xlsx_abs_path, dataset_provider):
+def dataframes_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     """
     Write the input datasets into same excel into the folder
     :param input_dataset_names: the list of dataset to put in a single excel file, using one sheet (excel tab) per dataset
@@ -146,14 +131,14 @@ def dataframes_to_xlsx(input_dataset_names, xlsx_abs_path, dataset_provider):
     :param dataset_provider: a lambda used to get the dataset
     """
 
-    logger.info(f"Building output xlsx file ... {xlsx_abs_path}")
+    logger.info(f"Building output excel file ... {xlsx_abs_path}")
     # The final workbook where all dataset sheets will be written
     workbook = Workbook()
     # remove the default sheet created
     workbook.remove(workbook.active)
 
     for name in input_dataset_names:
-        ds_worksheet = get_excel_worksheet(dataset_provider(name))
+        ds_worksheet = worksheet_provider(name)
         if ds_worksheet is None:
             continue
         ds_worksheet.title = name

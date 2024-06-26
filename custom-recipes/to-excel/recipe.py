@@ -13,8 +13,29 @@ import dataiku
 from dataiku.customrecipe import get_input_names_for_role
 from dataiku.customrecipe import get_output_names_for_role
 from dataiku.customrecipe import get_recipe_config
-
+from openpyxl import load_workbook
 from xlsx_writer import dataframes_to_xlsx
+import io
+
+DEFAULT_DATAIKU_SHEET_NAME = "Sheet1"
+
+def get_excel_worksheet(dataset):
+    logger.info(f"Getting Excel workbook from DSS dataset {dataset.short_name}...")
+    with dataset.raw_formatted_data(format="excel", format_params={ "applyColoring": True }) as stream:
+        data=stream.read()
+
+    # BytesIO allows to not write in a temp file on disk
+    memory_file = io.BytesIO(data)
+    wb=load_workbook(memory_file)
+    if DEFAULT_DATAIKU_SHEET_NAME in wb:
+        return wb[DEFAULT_DATAIKU_SHEET_NAME]
+    elif len(wb.sheetnames) == 1:
+        logger.warn(f"Default DSS default sheet name has changed from {DEFAULT_DATAIKU_SHEET_NAME} to {wb.sheetnames[0]}")
+        return wb[wb.sheetnames[0]]
+    else:
+        logger.error("Error getting Excel workbook from DSS dataset {dataset.short_name}, this dataset will not be exported")
+        return None
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
@@ -54,7 +75,7 @@ with tempfile.NamedTemporaryFile() as tmp_file:
     tmp_file_path = tmp_file.name
     logger.info("Intend to write the output xls file to the following location: {}".format(tmp_file_path))
 
-    dataframes_to_xlsx(input_datasets_names, tmp_file_path, lambda name: dataiku.Dataset(name))
+    dataframes_to_xlsx(input_datasets_names, tmp_file_path, lambda name: get_excel_worksheet(dataiku.Dataset(name)))
 
     with open(tmp_file_path, 'rb', encoding=None) as f:
         output_folder.upload_stream(output_file_name, f)
