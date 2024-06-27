@@ -14,14 +14,14 @@ from dataiku.customrecipe import get_input_names_for_role
 from dataiku.customrecipe import get_output_names_for_role
 from dataiku.customrecipe import get_recipe_config
 from openpyxl import load_workbook
-from xlsx_writer import dataframes_to_xlsx
+from xlsx_writer import datasets_to_xlsx
 import io
 
 DEFAULT_DATAIKU_SHEET_NAME = "Sheet1"
 
-def get_excel_worksheet(dataset):
+def get_excel_worksheet(dataset: dataiku.Dataset, apply_conditional_formatting: bool):
     logger.info(f"Getting Excel workbook from DSS dataset {dataset.short_name}...")
-    with dataset.raw_formatted_data(format="excel", format_params={ "applyColoring": True }) as stream:
+    with dataset.raw_formatted_data(format="excel", format_params={ "applyColoring": apply_conditional_formatting }) as stream:
         data=stream.read()
 
     # BytesIO allows to not write in a temp file on disk
@@ -58,6 +58,7 @@ output_folder = dataiku.Folder(output_folder_name)
 
 input_config = get_recipe_config()
 workbook_name = input_config.get('output_workbook_name', None)
+apply_conditional_formatting = input_config.get('export_conditional_formatting', False)
 
 if workbook_name is None:
     logger.warning("Received input received recipe config: {}".format(input_config))
@@ -75,7 +76,7 @@ with tempfile.NamedTemporaryFile() as tmp_file:
     tmp_file_path = tmp_file.name
     logger.info("Intend to write the output xls file to the following location: {}".format(tmp_file_path))
 
-    dataframes_to_xlsx(input_datasets_names, tmp_file_path, lambda name: get_excel_worksheet(dataiku.Dataset(name)))
+    datasets_to_xlsx(input_datasets_names, tmp_file_path, lambda name: get_excel_worksheet(dataiku.Dataset(name), apply_conditional_formatting))
 
     with open(tmp_file_path, 'rb', encoding=None) as f:
         output_folder.upload_stream(output_file_name, f)

@@ -1,4 +1,4 @@
-from xlsx_writer import dataframes_to_xlsx
+from xlsx_writer import datasets_to_xlsx
 
 import os
 from openpyxl import Workbook
@@ -28,7 +28,7 @@ def test_datasets_to_xlsx():
     def worksheet_provider(name):
         return tables[name]
 
-    dataframes_to_xlsx(['df1', 'df2', 'df3'], output_file, worksheet_provider)
+    datasets_to_xlsx(['df1', 'df2', 'df3'], output_file, worksheet_provider)
 
     df1_out = pd.read_excel(output_file, sheet_name="df1")
     df2_out = pd.read_excel(output_file, sheet_name="df2")

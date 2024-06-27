@@ -8,7 +8,6 @@ Conversion is based on Pandas feature conversion to xlsx.
 
 import logging
 import math
-import io
 from typing import Tuple
 from copy import copy
 
@@ -109,21 +108,31 @@ def auto_size_column_width(worksheet: Worksheet):
 
 
 
-
-def copy_sheet_to_workbook(source_sheet, target_workbook):
+# code inspired from https://openpyxl.readthedocs.io/en/stable/_modules/openpyxl/worksheet/copier.html
+def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -> Worksheet:
+    """
+    Copy the source worksheet as a new worksheet in the target workbook
+    :param source_sheet: the source sheet
+    :param target_workbook: the workbook used to store the new sheet
+    :return: a reference to the created sheet inside the workbook
+    """
     logger.info(f"Copying sheet {source_sheet.title} to target workbook")
     target_sheet = target_workbook.create_sheet(source_sheet.title)
     for row in source_sheet:
         for cell in row:
             new_cell = target_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
+            new_cell.data_type = cell.data_type
             if cell.has_style:
+                #new_cell._style = copy(cell._style)
                 new_cell.font = copy(cell.font)
                 new_cell.border = copy(cell.border)
                 new_cell.fill = copy(cell.fill)
+                new_cell.number_format = copy(cell.number_format)
+                new_cell.alignment = copy(cell.alignment)
 
     return target_sheet
 
-def dataframes_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
+def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     """
     Write the input datasets into same excel into the folder
     :param input_dataset_names: the list of dataset to put in a single excel file, using one sheet (excel tab) per dataset
