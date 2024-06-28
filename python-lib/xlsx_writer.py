@@ -123,7 +123,6 @@ def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -
             new_cell = target_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
             new_cell.data_type = cell.data_type
             if cell.has_style:
-                #new_cell._style = copy(cell._style)
                 new_cell.font = copy(cell.font)
                 new_cell.border = copy(cell.border)
                 new_cell.fill = copy(cell.fill)
