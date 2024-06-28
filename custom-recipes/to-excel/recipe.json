@@ -37,8 +37,15 @@
             "type": "STRING",
             "defaultValue": "output",
             "mandatory": true
+        },
+        {
+            "name": "export_conditional_formatting",
+            "label": "Apply conditional formatting",
+            "description": "Color cells by rules, when applicable",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "mandatory": true
         }
-
     ],
     "resourceKeys" : []
 }
