@@ -1,9 +1,9 @@
 # Changelog
 
-## [Version 1.1.5](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v1.1.5) - Feature release - 2024-06
+## [Version 2.0.0](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v1.1.5) - Major release - 2024-07
+- Important : Column type changed ! From this version, cells type in excel will reflect the DSS storage type in DSS. For example, string column containing only numbers will be exported as text column. If you want a number column in excel, you need to have a integer/float column on DSS
 - Export dataset conditional formatting colors (colors the cells, does not export rules)
 - Bug fix : can now export dataset with date types
-- Preserve DSS types in cells (string, numbers, date, bool)
 
 ## [Version 1.1.4](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v1.1.4) - Bug release - 2024-06
 - Fix numpy issue with DSS 13

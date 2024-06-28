@@ -21,12 +21,17 @@ DEFAULT_DATAIKU_SHEET_NAME = "Sheet1"
 
 def get_excel_worksheet(dataset: dataiku.Dataset, apply_conditional_formatting: bool):
     logger.info(f"Getting Excel workbook from DSS dataset {dataset.short_name}...")
-    with dataset.raw_formatted_data(format="excel", format_params={ "applyColoring": apply_conditional_formatting }) as stream:
-        data=stream.read()
+    with tempfile.NamedTemporaryFile() as tmp_file:
+        with dataset.raw_formatted_data(format="excel", format_params={ "applyColoring": apply_conditional_formatting }) as stream:
+            chunk_size = 1024 * 1024 # 1Mbytes chunk to save RAM
+            while True:
+                chunk = stream.read(chunk_size)
+                if not chunk:
+                    break
+                tmp_file.write(chunk)
+        tmp_file.close()
 
-    # BytesIO allows to not write in a temp file on disk
-    memory_file = io.BytesIO(data)
-    wb=load_workbook(memory_file)
+    wb=load_workbook(tmp_file)
     if DEFAULT_DATAIKU_SHEET_NAME in wb:
         return wb[DEFAULT_DATAIKU_SHEET_NAME]
     elif len(wb.sheetnames) == 1:
