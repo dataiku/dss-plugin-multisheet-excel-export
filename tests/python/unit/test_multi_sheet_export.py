@@ -7,12 +7,12 @@ import tempfile
 
 
 def build_worksheet(headers, data):
-    wb = Workbook()
-    ws = wb.active
-    ws.append(headers)
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.append(headers)
     for row in data:
-        ws.append(row)
-    return ws
+        worksheet.append(row)
+    return worksheet
 
 
 def test_dataset_renames():

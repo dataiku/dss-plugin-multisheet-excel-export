@@ -13,16 +13,16 @@ import dataiku
 from dataiku.customrecipe import get_input_names_for_role
 from dataiku.customrecipe import get_output_names_for_role
 from dataiku.customrecipe import get_recipe_config
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 from xlsx_writer import datasets_to_xlsx
-import io
+from typing import Union
 
 DEFAULT_DATAIKU_SHEET_NAME = "Sheet1"
 READ_CHUNK_SIZE = 1024 * 1024 # 1Mbytes
 
-def get_excel_worksheet(dataset: dataiku.Dataset, apply_conditional_formatting: bool):
+def get_excel_worksheet(dataset: dataiku.Dataset, apply_conditional_formatting: bool) -> Union[Workbook, None]:
     logger.info(f"Getting Excel workbook from DSS dataset {dataset.short_name}")
-    wb = None
+    workbook = None
     with tempfile.NamedTemporaryFile(delete=True) as tmp_file:
         with dataset.raw_formatted_data(format="excel", format_params={ "applyColoring": apply_conditional_formatting }) as stream:
             # read steam with chunks to save RAM
@@ -34,19 +34,18 @@ def get_excel_worksheet(dataset: dataiku.Dataset, apply_conditional_formatting: 
                 tmp_file.write(chunk)
         tmp_file.flush() # Make sure file is written on disk
         tmp_file.seek(0) # Read back from start of file to load it in the workbook
-        wb=load_workbook(tmp_file)
+        workbook = load_workbook(tmp_file)
 
-    if wb is None:
-        logger.error("Error getting Excel workbook from DSS dataset {dataset.short_name}, this dataset will not be exported")
-        return None
-    if DEFAULT_DATAIKU_SHEET_NAME in wb:
-        return wb[DEFAULT_DATAIKU_SHEET_NAME]
-    elif len(wb.sheetnames) == 1:
-        logger.warn(f"Default DSS default sheet name has changed from {DEFAULT_DATAIKU_SHEET_NAME} to {wb.sheetnames[0]}")
-        return wb[wb.sheetnames[0]]
-    else:
-        logger.error("Error getting Excel workbook from DSS dataset {dataset.short_name}, this dataset will not be exported")
-        return None
+    
+    if workbook is not None:
+        if DEFAULT_DATAIKU_SHEET_NAME in workbook:
+            return workbook[DEFAULT_DATAIKU_SHEET_NAME]
+        elif len(workbook.sheetnames) == 1:
+            logger.warn(f"Default DSS default sheet name has changed from {DEFAULT_DATAIKU_SHEET_NAME} to {workbook.sheetnames[0]}")
+            return workbook[workbook.sheetnames[0]]
+    
+    logger.error("Error getting Excel workbook from DSS dataset {dataset.short_name}, this dataset will not be exported")
+    return None
 
 
 logger = logging.getLogger(__name__)

@@ -141,21 +141,21 @@ def rename_too_long_dataset_names(input_dataset_names: List[str]) -> Dict[str, s
     """
 
     return_map = {}
-    index_rename=-1
-    renaming_length = EXCEL_MAX_LEN_SHEET_NAME-2
+    index_rename = -1
+    renaming_length = EXCEL_MAX_LEN_SHEET_NAME - 2
     for name in input_dataset_names:
         if len(name) > EXCEL_MAX_LEN_SHEET_NAME:
-            index_rename+=1
-            rename= f"{name[0:renaming_length]}{index_rename:02d}"
+            index_rename += 1
+            rename = f"{name[0:renaming_length]}{index_rename:02d}"
             # Almost impossible case : a DS already has this name
             while rename in input_dataset_names:
-                index_rename+=1
-                rename= f"{name[0:renaming_length]}{index_rename:02d}"
+                index_rename += 1
+                rename = f"{name[0:renaming_length]}{index_rename:02d}"
 
             logger.info(f"Dataset {name} with a too long name will be stored as sheet {rename}")
-            return_map[name]=rename
+            return_map[name] = rename
         else:
-            return_map[name]=name
+            return_map[name] = name
 
     return return_map
 
@@ -168,7 +168,7 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     :param dataset_provider: a lambda used to get the dataset
     """
 
-    logger.info(f"Building output excel file ... {xlsx_abs_path}")
+    logger.info(f"Building output excel file {xlsx_abs_path}")
     # The final workbook where all dataset sheets will be written
     workbook = Workbook()
     # remove the default sheet created
@@ -177,17 +177,18 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     renaming_map = rename_too_long_dataset_names(input_dataset_names)
 
     for name in input_dataset_names:
-        ds_worksheet = worksheet_provider(name)
-        if ds_worksheet is None:
+        dataset_worksheet = worksheet_provider(name)
+        if dataset_worksheet is None:
             continue
 
         if name in renaming_map:
-            ds_worksheet.title = renaming_map[name]
+            dataset_worksheet.title = renaming_map[name]
         else:
             # should never happen
-            ds_worksheet.title = name
+            logger.warn(f"Failed to find a name for the workshhet {name}")
+            dataset_worksheet.title = name
         
-        target_sheet = copy_sheet_to_workbook(ds_worksheet, workbook)
+        target_sheet = copy_sheet_to_workbook(dataset_worksheet, workbook)
         
         logger.info(f"Styling excel sheet {target_sheet.title} in target workbook")
         style_header(target_sheet)
