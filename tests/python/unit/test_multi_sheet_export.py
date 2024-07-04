@@ -33,8 +33,8 @@ def test_dataset_renames():
         "very_very_long_name_with_too_much_character13",
         "very_very_long_name_with_too_much_character14",
         "very_very_long_name_with_too_much_character15",
-        "very_very_long_name_with_too_09", # To test that too long DS doesn't get renamed to a dataset with correct leng
-        "very_very_long_name_with_too_14", # To test that too long DS doesn't get renamed to a dataset with correct leng
+        "very_very_long_name_with_too_09", # To test that too long DS doesn't get renamed to a dataset with correct len
+        "very_very_long_name_with_too_14", # To test that too long DS doesn't get renamed to a dataset with correct len
         "finally_normal_dataset",
         "finally_normal_dataset2"
 
