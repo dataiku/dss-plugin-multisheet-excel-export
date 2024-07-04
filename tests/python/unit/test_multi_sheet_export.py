@@ -1,4 +1,4 @@
-from xlsx_writer import datasets_to_xlsx
+from xlsx_writer import datasets_to_xlsx, rename_too_long_dataset_names
 
 import os
 from openpyxl import Workbook
@@ -13,6 +13,56 @@ def build_worksheet(headers, data):
     for row in data:
         ws.append(row)
     return ws
+
+
+def test_dataset_renames():
+    original_list = [
+        "very_very_long_name_with_too_much_character0",
+        "very_very_long_name_with_too_much_character1",
+        "very_very_long_name_with_too_much_character2",
+        "very_very_long_name_with_too_much_character3",
+        "very_very_long_name_with_too_much_character4",
+        "very_very_long_name_with_too_much_character5",
+        "very_very_long_name_with_too_much_character6",
+        "very_very_long_name_with_too_much_character7",
+        "very_very_long_name_with_too_much_character8",
+        "very_very_long_name_with_too_much_character9",
+        "very_very_long_name_with_too_much_character10",
+        "very_very_long_name_with_too_much_character11",
+        "very_very_long_name_with_too_much_character12",
+        "very_very_long_name_with_too_much_character13",
+        "very_very_long_name_with_too_much_character14",
+        "very_very_long_name_with_too_much_character15",
+        "very_very_long_name_with_too_09", # To test that too long DS doesn't get renamed to a dataset with correct leng
+        "very_very_long_name_with_too_14", # To test that too long DS doesn't get renamed to a dataset with correct leng
+        "finally_normal_dataset",
+        "finally_normal_dataset2"
+
+    ]
+    test_rename_map = rename_too_long_dataset_names(original_list)
+    assert test_rename_map["finally_normal_dataset"] == "finally_normal_dataset"
+    assert test_rename_map["finally_normal_dataset2"] == "finally_normal_dataset2"
+    assert test_rename_map["very_very_long_name_with_too_14"] == "very_very_long_name_with_too_14"
+    assert test_rename_map["very_very_long_name_with_too_09"] == "very_very_long_name_with_too_09"
+
+    assert test_rename_map["very_very_long_name_with_too_much_character0"]  == "very_very_long_name_with_too_00"
+    assert test_rename_map["very_very_long_name_with_too_much_character1"]  == "very_very_long_name_with_too_01"
+    assert test_rename_map["very_very_long_name_with_too_much_character2"]  == "very_very_long_name_with_too_02"
+    assert test_rename_map["very_very_long_name_with_too_much_character3"]  == "very_very_long_name_with_too_03"
+    assert test_rename_map["very_very_long_name_with_too_much_character4"]  == "very_very_long_name_with_too_04"
+    assert test_rename_map["very_very_long_name_with_too_much_character5"]  == "very_very_long_name_with_too_05"
+    assert test_rename_map["very_very_long_name_with_too_much_character6"]  == "very_very_long_name_with_too_06"
+    assert test_rename_map["very_very_long_name_with_too_much_character7"]  == "very_very_long_name_with_too_07"
+    assert test_rename_map["very_very_long_name_with_too_much_character8"]  == "very_very_long_name_with_too_08"
+    assert test_rename_map["very_very_long_name_with_too_much_character9"]  == "very_very_long_name_with_too_10"
+    assert test_rename_map["very_very_long_name_with_too_much_character10"] == "very_very_long_name_with_too_11"
+    assert test_rename_map["very_very_long_name_with_too_much_character11"] == "very_very_long_name_with_too_12"
+    assert test_rename_map["very_very_long_name_with_too_much_character12"] == "very_very_long_name_with_too_13"
+    assert test_rename_map["very_very_long_name_with_too_much_character13"] == "very_very_long_name_with_too_15"
+    assert test_rename_map["very_very_long_name_with_too_much_character14"] == "very_very_long_name_with_too_16"
+    assert test_rename_map["very_very_long_name_with_too_much_character15"] == "very_very_long_name_with_too_17"
+
+
 
 
 def test_datasets_to_xlsx():
