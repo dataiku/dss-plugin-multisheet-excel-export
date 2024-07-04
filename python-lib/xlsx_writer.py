@@ -27,35 +27,6 @@ EXCEL_MAX_LEN_SHEET_NAME = 31
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
 
-def style_header(worksheet: Worksheet, 
-                  font_name: str = "Calibri", 
-                  font_size: int = 11, 
-                  font_color : str = WHITE, 
-                  background_color : str = DATAIKU_TEAL,
-                  bold : bool = True
-                 ):
-    """
-    Style header of the worksheet
-    """
-
-    if worksheet.min_column < 1:
-        logger.warn(f"No header row for worksheet {worksheet}. Styling skipped.")
-        return
-
-    font = Font(name=font_name, size=font_size, color=font_color, bold=bold)
-    fill = PatternFill("solid", fgColor=background_color)
-
-    no_border_side = Side(border_style=None)
-    border = Border(left=no_border_side, right=no_border_side, top=no_border_side, bottom=no_border_side)
-
-    alignment = Alignment(vertical='bottom', horizontal='center')
-
-    for header_cell in worksheet[1]:
-        header_cell.font = font
-        header_cell.fill = fill
-        header_cell.border = border
-        header_cell.alignment = alignment
-
 def get_column_width(column: Tuple):
     """
     Find optimum column width based on content and header length
@@ -191,7 +162,6 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
         target_sheet = copy_sheet_to_workbook(dataset_worksheet, workbook)
         
         logger.info(f"Styling excel sheet {target_sheet.title} in target workbook")
-        style_header(target_sheet)
         auto_size_column_width(target_sheet)
 
         logger.info(f"Finished writing dataset {name} into excel sheet.")
