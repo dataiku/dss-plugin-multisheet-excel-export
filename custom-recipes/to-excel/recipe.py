@@ -21,7 +21,7 @@ DEFAULT_DATAIKU_SHEET_NAME = "Sheet1"
 READ_CHUNK_SIZE = 1024 * 1024 # 1Mbytes
 
 def get_excel_worksheet(dataset: dataiku.Dataset, apply_conditional_formatting: bool):
-    logger.info(f"Getting Excel workbook from DSS dataset {dataset.short_name}...")
+    logger.info(f"Getting Excel workbook from DSS dataset {dataset.short_name}")
     wb = None
     with tempfile.NamedTemporaryFile(delete=True) as tmp_file:
         with dataset.raw_formatted_data(format="excel", format_params={ "applyColoring": apply_conditional_formatting }) as stream:

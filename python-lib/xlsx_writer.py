@@ -8,7 +8,7 @@ Conversion is based on Pandas feature conversion to xlsx.
 
 import logging
 import math
-from typing import Tuple
+from typing import Tuple, List, Dict
 from copy import copy
 
 from openpyxl.styles import Alignment, Font, PatternFill, Side
@@ -22,7 +22,7 @@ from openpyxl import Workbook
 DATAIKU_TEAL = "FF2AB1AC"
 LETTER_WIDTH = 1.20 # Approximative letter width to scale column width
 MAX_LENGTH_TO_SHOW = 45 # Limit copied from DSS native excel exporter
-
+EXCEL_MAX_LEN_SHEET_NAME = 31
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
@@ -131,6 +131,35 @@ def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -
 
     return target_sheet
 
+def rename_too_long_dataset_names(input_dataset_names: List[str]) -> Dict[str, str]:
+    """
+    Excel allows for only maximum 30 chars in the sheet names, so if some DS have more than 30 chars :
+        - truncate the name to 28 chars
+        - Add an index from 00 to 99 at the end in case of overlap
+    :param input_dataset_names: the list of dataset names to remap
+    :returns: a Dict[str, str] mapping the DS names with the sheet names
+    """
+
+    return_map = {}
+    index_rename=-1
+    renaming_length = EXCEL_MAX_LEN_SHEET_NAME-2
+    for name in input_dataset_names:
+        if len(name) > EXCEL_MAX_LEN_SHEET_NAME:
+            index_rename+=1
+            rename= f"{name[0:renaming_length]}{index_rename:02d}"
+            # Almost impossible case : a DS already has this name
+            while rename in input_dataset_names:
+                index_rename+=1
+                rename= f"{name[0:renaming_length]}{index_rename:02d}"
+
+            logger.info(f"Dataset {name} with a too long name will be stored as sheet {rename}")
+            return_map[name]=rename
+        else:
+            return_map[name]=name
+
+    return return_map
+
+
 def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     """
     Write the input datasets into same excel into the folder
@@ -145,11 +174,18 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     # remove the default sheet created
     workbook.remove(workbook.active)
 
+    renaming_map = rename_too_long_dataset_names(input_dataset_names)
+
     for name in input_dataset_names:
         ds_worksheet = worksheet_provider(name)
         if ds_worksheet is None:
             continue
-        ds_worksheet.title = name
+
+        if name in renaming_map:
+            ds_worksheet.title = renaming_map[name]
+        else:
+            # should never happen
+            ds_worksheet.title = name
         
         target_sheet = copy_sheet_to_workbook(ds_worksheet, workbook)
         
