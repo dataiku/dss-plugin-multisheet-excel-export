@@ -34,16 +34,17 @@ def get_excel_worksheet(dataset: dataiku.Dataset, apply_conditional_formatting: 
                 tmp_file.write(chunk)
         tmp_file.flush() # Make sure file is written on disk
         tmp_file.seek(0) # Read back from start of file to load it in the workbook
+
+        # DEV WARNING : Excel exported file contains header row in Calibri and rest in Aptos Narrow font. But load_workbook converts everything into Calibri
         workbook = load_workbook(tmp_file)
 
-    
     if workbook is not None:
         if DEFAULT_DATAIKU_SHEET_NAME in workbook:
             return workbook[DEFAULT_DATAIKU_SHEET_NAME]
         elif len(workbook.sheetnames) == 1:
             logger.warn(f"Default DSS default sheet name has changed from {DEFAULT_DATAIKU_SHEET_NAME} to {workbook.sheetnames[0]}")
             return workbook[workbook.sheetnames[0]]
-    
+
     logger.error("Error getting Excel workbook from DSS dataset {dataset.short_name}, this dataset will not be exported")
     return None
 
