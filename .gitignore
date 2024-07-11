@@ -58,6 +58,7 @@ unit.xml
 .hypothesis/
 .pytest_cache/
 cover/
+tests/allure_report/
 
 # Translations
 *.mo
@@ -229,3 +230,6 @@ gradle-app.setting
 
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
+
+#IDEs
+.vscode/
