@@ -25,7 +25,7 @@ if len(input_datasets_ids) == 0:
 
 input_datasets_names = [name.split('.')[-1] for name in input_datasets_ids]
 if len(input_datasets_names) == 0:
-    logger.warning("Received no input datasets names. input_datasets_ids={}, input_datasets_names={}".format(
+    logger.warning("Received Louis COMMIT no input datasets names. input_datasets_ids={}, input_datasets_names={}".format(
         input_datasets_ids, input_datasets_names))
 
 # Retrieve the list of output folders, should contain unique element
