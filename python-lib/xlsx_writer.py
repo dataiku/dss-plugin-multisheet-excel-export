@@ -8,7 +8,8 @@ Conversion is based on Pandas feature conversion to xlsx.
 
 import logging
 import math
-from typing import Tuple
+from typing import Tuple, List, Dict
+from copy import copy
 
 from openpyxl.styles import Alignment, Font, PatternFill, Side
 from openpyxl.styles.borders import Border
@@ -16,43 +17,15 @@ from openpyxl.styles.colors import WHITE
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 from openpyxl.worksheet.worksheet import Worksheet
-import pandas as pd
+from openpyxl import Workbook
 
 DATAIKU_TEAL = "FF2AB1AC"
 LETTER_WIDTH = 1.20 # Approximative letter width to scale column width
 MAX_LENGTH_TO_SHOW = 45 # Limit copied from DSS native excel exporter
+EXCEL_MAX_LEN_SHEET_NAME = 31
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
-
-def style_header(worksheet: Worksheet, 
-                  font_name: str = "Calibri", 
-                  font_size: int = 11, 
-                  font_color : str = WHITE, 
-                  background_color : str = DATAIKU_TEAL,
-                  bold : bool = True
-                 ):
-    """
-    Style header of the worksheet
-    """
-
-    if worksheet.min_column < 1:
-        logger.warn(f"No header row for worksheet {worksheet}. Styling skipped.")
-        return
-
-    font = Font(name=font_name, size=font_size, color=font_color, bold=bold)
-    fill = PatternFill("solid", fgColor=background_color)
-
-    no_border_side = Side(border_style=None)
-    border = Border(left=no_border_side, right=no_border_side, top=no_border_side, bottom=no_border_side)
-
-    alignment = Alignment(vertical='bottom', horizontal='center')
-
-    for header_cell in worksheet[1]:
-        header_cell.font = font
-        header_cell.fill = fill
-        header_cell.border = border
-        header_cell.alignment = alignment
 
 def get_column_width(column: Tuple):
     """
@@ -104,33 +77,94 @@ def auto_size_column_width(worksheet: Worksheet):
     worksheet.column_dimensions = dimension_holder
 
 
-def dataframes_to_xlsx(input_dataframes_names, xlsx_abs_path, dataframe_provider):
+
+
+# code inspired from https://openpyxl.readthedocs.io/en/stable/_modules/openpyxl/worksheet/copier.html
+def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -> Worksheet:
+    """
+    Copy the source worksheet as a new worksheet in the target workbook
+    :param source_sheet: the source sheet
+    :param target_workbook: the workbook used to store the new sheet
+    :return: a reference to the created sheet inside the workbook
+    """
+    logger.info(f"Copying sheet {source_sheet.title} to target workbook")
+    target_sheet = target_workbook.create_sheet(source_sheet.title)
+    for row in source_sheet:
+        for cell in row:
+            new_cell = target_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
+            new_cell.data_type = cell.data_type
+            if cell.has_style:
+                new_cell.font = copy(cell.font)
+                new_cell.border = copy(cell.border)
+                new_cell.fill = copy(cell.fill)
+                new_cell.number_format = copy(cell.number_format)
+                new_cell.alignment = copy(cell.alignment)
+
+    return target_sheet
+
+def rename_too_long_dataset_names(input_dataset_names: List[str]) -> Dict[str, str]:
+    """
+    Excel allows for only maximum 30 chars in the sheet names, so if some DS have more than 30 chars :
+        - truncate the name to 28 chars
+        - Add an index from 00 to 99 at the end in case of overlap
+    :param input_dataset_names: the list of dataset names to remap
+    :returns: a Dict[str, str] mapping the DS names with the sheet names
+    """
+
+    return_map = {}
+    index_rename = -1
+    renaming_length = EXCEL_MAX_LEN_SHEET_NAME - 2
+    for name in input_dataset_names:
+        if len(name) > EXCEL_MAX_LEN_SHEET_NAME:
+            index_rename += 1
+            rename = f"{name[0:renaming_length]}{index_rename:02d}"
+            # Almost impossible case : a DS already has this name
+            while rename in input_dataset_names:
+                index_rename += 1
+                rename = f"{name[0:renaming_length]}{index_rename:02d}"
+
+            logger.info(f"Dataset {name} with a too long name will be stored as sheet {rename}")
+            return_map[name] = rename
+        else:
+            return_map[name] = name
+
+    return return_map
+
+
+def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     """
     Write the input datasets into same excel into the folder
-    :param input_datasets_names:
-    :param writer:
-    :return:
+    :param input_dataset_names: the list of dataset to put in a single excel file, using one sheet (excel tab) per dataset
+    :param xlsx_abs_path: the temporary path where to write the final excel file
+    :param dataset_provider: a lambda used to get the dataset
     """
-    logger.info("Writing output xlsx file ...")
-    writer = pd.ExcelWriter(xlsx_abs_path, engine='openpyxl')
 
-    for name in input_dataframes_names:
-        df = dataframe_provider(name)
+    logger.info(f"Building output excel file {xlsx_abs_path}")
+    # The final workbook where all dataset sheets will be written
+    workbook = Workbook()
+    # remove the default sheet created
+    workbook.remove(workbook.active)
 
-        logger.info("Writing dataset into excel sheet...")
-        df.to_excel(writer, sheet_name=name, index=False, encoding='utf-8')
+    renaming_map = rename_too_long_dataset_names(input_dataset_names)
 
-        worksheet = writer.sheets.get(name)
-
-        if worksheet is None:
-            logger.warn(f"No worksheet for dataset {name}. Written but styling skipped.")
+    for name in input_dataset_names:
+        dataset_worksheet = worksheet_provider(name)
+        if dataset_worksheet is None:
             continue
 
-        logger.info(f"Styling excel sheet...")
-        style_header(worksheet)
-        auto_size_column_width(worksheet)
+        if name in renaming_map:
+            dataset_worksheet.title = renaming_map[name]
+        else:
+            # should never happen
+            logger.warn(f"Failed to find a name for the workshhet {name}")
+            dataset_worksheet.title = name
+        
+        target_sheet = copy_sheet_to_workbook(dataset_worksheet, workbook)
+        
+        logger.info(f"Styling excel sheet {target_sheet.title} in target workbook")
+        auto_size_column_width(target_sheet)
 
-        logger.info("Finished writing dataset {} into excel sheet.".format(name))
-
-    writer.save()
+        logger.info(f"Finished writing dataset {name} into excel sheet.")
+        
+    workbook.save(xlsx_abs_path)
     logger.info("Done writing output xlsx file")
