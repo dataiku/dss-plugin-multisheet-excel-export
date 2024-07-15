@@ -41,7 +41,7 @@
         {
             "name": "export_conditional_formatting",
             "label": "Apply conditional formatting",
-            "description": "Color cells by rules, when applicable",
+            "description": "Color cells by rules, when applicable (Only available for DSS 12.6+)",
             "type": "BOOLEAN",
             "defaultValue": false,
             "mandatory": true
