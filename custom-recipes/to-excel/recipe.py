@@ -21,7 +21,7 @@ DEFAULT_DATAIKU_SHEET_NAME = "Sheet1"
 READ_CHUNK_SIZE = 1024 * 1024 # 1Mbytes
 
 def get_excel_worksheet(dataset: dataiku.Dataset, apply_conditional_formatting: bool) -> Union[Workbook, None]:
-    logger.info(f"Getting Excel workbook from DSS dataset {dataset.short_name}")
+    logger.info(f"Getting Excel workbook from DSS dataset '{dataset.short_name}'...")
     workbook = None
     with tempfile.NamedTemporaryFile(delete=True) as tmp_file:
         with dataset.raw_formatted_data(format="excel", format_params={ "applyColoring": apply_conditional_formatting }) as stream:
@@ -42,10 +42,10 @@ def get_excel_worksheet(dataset: dataiku.Dataset, apply_conditional_formatting: 
         if DEFAULT_DATAIKU_SHEET_NAME in workbook:
             return workbook[DEFAULT_DATAIKU_SHEET_NAME]
         elif len(workbook.sheetnames) == 1:
-            logger.warn(f"Default DSS default sheet name has changed from {DEFAULT_DATAIKU_SHEET_NAME} to {workbook.sheetnames[0]}")
+            logger.warn(f"Default DSS default sheet name has changed from '{DEFAULT_DATAIKU_SHEET_NAME}' to '{workbook.sheetnames[0]}'")
             return workbook[workbook.sheetnames[0]]
 
-    logger.error("Error getting Excel workbook from DSS dataset {dataset.short_name}, this dataset will not be exported")
+    logger.error("Error getting Excel workbook from DSS dataset '{dataset.short_name}', this dataset will not be exported")
     return None
 
 

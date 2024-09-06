@@ -8,16 +8,22 @@ Conversion is based on Pandas feature conversion to xlsx.
 
 import logging
 import math
+import os
+import tempfile
+import zipfile
+
 from typing import Tuple, List, Dict
 from copy import copy
 
-from openpyxl.styles import Alignment, Font, PatternFill, Side
+from openpyxl.cell import Cell
+from openpyxl.styles import Alignment, Border, Fill, Font
 from openpyxl.styles.borders import Border
 from openpyxl.styles.colors import WHITE
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl import Workbook
+from zipfile import ZIP_DEFLATED
 
 DATAIKU_TEAL = "FF2AB1AC"
 LETTER_WIDTH = 1.20 # Approximative letter width to scale column width
@@ -61,7 +67,7 @@ def auto_size_column_width(worksheet: Worksheet):
     Resize columns based on the length of the header text
     """
     if worksheet.min_column < 1:
-        logger.warn(f"No header row for worksheet {worksheet}. Column auto-size skipped.")
+        logger.warn(f"No header row for worksheet '{worksheet}'. Column auto-size skipped.")
         return
 
     dimension_holder = DimensionHolder(worksheet=worksheet) 
@@ -76,8 +82,40 @@ def auto_size_column_width(worksheet: Worksheet):
                                                            width=column_width)
     worksheet.column_dimensions = dimension_holder
 
+class StyleCached:
+    def __init__(self,
+                 font: Font,
+                 border: Border,
+                 fill: Fill,
+                 number_format: str,
+                 alignment: Alignment):
+        self.font = copy(font)
+        self.border = copy(border)
+        self.fill = copy(fill)
+        self.number_format = copy(number_format)
+        self.alignment = copy(alignment)
 
+    def __eq__(self, cell: Cell):
+       return cell.fill.__eq__(self.fill) and cell.alignment.__eq__(self.alignment) and cell.number_format.__eq__(self.number_format) and cell.border.__eq__(self.border) and cell.font.__eq__(self.font)
 
+style_cache = []
+def get_style_cached(cell: Cell):
+    for cache in style_cache:
+        if cache.__eq__(cell):
+            return cache
+    cache = StyleCached(cell.font, cell.border, cell.fill, cell.number_format, cell.alignment)
+    style_cache.append(cache)
+    return cache
+
+def add_styles_to_worksheet(worksheet: Worksheet):
+    logger.info(f"Adding {len(style_cache)} styles into '{worksheet.title}' worksheet...")
+    for id, cache in enumerate(style_cache, 1):
+        new_cell = worksheet.cell(row=id, column=1, value="style")
+        new_cell.font = cache.font
+        new_cell.border = cache.border
+        new_cell.fill = cache.fill
+        new_cell.number_format = cache.number_format
+        new_cell.alignment = cache.alignment
 
 # code inspired from https://openpyxl.readthedocs.io/en/stable/_modules/openpyxl/worksheet/copier.html
 def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -> Worksheet:
@@ -87,18 +125,19 @@ def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -
     :param target_workbook: the workbook used to store the new sheet
     :return: a reference to the created sheet inside the workbook
     """
-    logger.info(f"Copying sheet {source_sheet.title} to target workbook")
+    logger.info(f"Copying sheet '{source_sheet.title}' to target workbook...")
     target_sheet = target_workbook.create_sheet(source_sheet.title)
     for row in source_sheet:
         for cell in row:
             new_cell = target_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
             new_cell.data_type = cell.data_type
             if cell.has_style:
-                new_cell.font = copy(cell.font)
-                new_cell.border = copy(cell.border)
-                new_cell.fill = copy(cell.fill)
-                new_cell.number_format = copy(cell.number_format)
-                new_cell.alignment = copy(cell.alignment)
+                cache = get_style_cached(cell)
+                new_cell.font = cache.font
+                new_cell.border = cache.border
+                new_cell.fill = cache.fill
+                new_cell.number_format = cache.number_format
+                new_cell.alignment = cache.alignment
 
     return target_sheet
 
@@ -123,30 +162,32 @@ def rename_too_long_dataset_names(input_dataset_names: List[str]) -> Dict[str, s
                 index_rename += 1
                 rename = f"{name[0:renaming_length]}{index_rename:02d}"
 
-            logger.info(f"Dataset {name} with a too long name will be stored as sheet {rename}")
+            logger.info(f"Dataset '{name}' with a too long name will be stored as sheet '{rename}'")
             return_map[name] = rename
         else:
             return_map[name] = name
 
     return return_map
 
-
 def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     """
-    Write the input datasets into same excel into the folder
-    :param input_dataset_names: the list of dataset to put in a single excel file, using one sheet (excel tab) per dataset
+    Write each input dataset into one temporary excel and merge all these excel into the final excel file
+    :param input_dataset_names: the list of dataset, using one temporary workbook per dataset
     :param xlsx_abs_path: the temporary path where to write the final excel file
-    :param dataset_provider: a lambda used to get the dataset
+    :param worksheet_provider: a lambda used to get the dataset worksheet
     """
 
-    logger.info(f"Building output excel file {xlsx_abs_path}")
-    # The final workbook where all dataset sheets will be written
-    workbook = Workbook()
+    logger.info(f"Building output excel file '{xlsx_abs_path}'...")
+    # A template workbook to store styles thanks to the cache
+    template_workbook = Workbook()
     # remove the default sheet created
-    workbook.remove(workbook.active)
+    template_workbook.remove(template_workbook.active)
+
+    # List containing all temporary workbooks generated from dataset
+    workbook_tmp_files = []
 
     renaming_map = rename_too_long_dataset_names(input_dataset_names)
-
+    
     for name in input_dataset_names:
         dataset_worksheet = worksheet_provider(name)
         if dataset_worksheet is None:
@@ -156,15 +197,67 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
             dataset_worksheet.title = renaming_map[name]
         else:
             # should never happen
-            logger.warn(f"Failed to find a name for the workshhet {name}")
+            logger.warn(f"Failed to find a name for the worksheet '{name}'")
             dataset_worksheet.title = name
-        
-        target_sheet = copy_sheet_to_workbook(dataset_worksheet, workbook)
-        
-        logger.info(f"Styling excel sheet {target_sheet.title} in target workbook")
-        auto_size_column_width(target_sheet)
 
-        logger.info(f"Finished writing dataset {name} into excel sheet.")
+        # Add an empty sheet in the template just to have the name of the dataset
+        # This sheet will be replaced during the moving step
+        template_workbook.create_sheet(dataset_worksheet.title)
+  
+        # Create a temporary workbook to save it on disk in order to avoid out of memory
+        logger.info(f"Creating dataset '{name}' temporary workbook...")
+        temp_workbook = Workbook()
+        # Add previous styles in the default sheet (sheet1.xml) to keep indexes for the final excel file
+        add_styles_to_worksheet(temp_workbook.active)
+        temp_sheet = copy_sheet_to_workbook(dataset_worksheet, temp_workbook)
+        logger.info(f"Styling excel sheet '{temp_sheet.title}' in temporary worksheet...")
+        auto_size_column_width(temp_sheet)
+
+        workbook_tmp_files.append(tempfile.NamedTemporaryFile())
+        temp_workbook.save(workbook_tmp_files[-1].name)
+
+        # Free memory
+        del temp_sheet
+        temp_workbook.close()
+        del dataset_worksheet
+
+        logger.info(f"Finished writing dataset '{name}' temporary workbook.")
+
+    # Save template workbook and unzip it
+    template_workbook_extract_dir = tempfile.TemporaryDirectory()
+    with tempfile.NamedTemporaryFile() as template_workbook_file:
+        # Add styles to template workbook before saving it
+        if template_workbook.worksheets:
+            add_styles_to_worksheet(template_workbook.worksheets[0])
+
+        template_workbook.save(template_workbook_file.name)
+        template_workbook.close()
         
-    workbook.save(xlsx_abs_path)
-    logger.info("Done writing output xlsx file")
+        logger.info("Extracting template workbook...")
+        with zipfile.ZipFile(template_workbook_file.name, mode="r") as zipFile:
+            zipFile.extractall(path=template_workbook_extract_dir.name) 
+
+    logger.info("Extracting and moving temporary sheets...")
+    # Extract the sheet2.xml only because sheet1.xml is just for keeping style indexes
+    sheet_name_to_extract_and_move = "xl/worksheets/sheet2.xml"
+    for idx, file in enumerate(workbook_tmp_files, 1):
+        extract_sheet_dir = tempfile.TemporaryDirectory()
+        with zipfile.ZipFile(file.name, mode="r") as zipFile:
+            zipFile.extract(sheet_name_to_extract_and_move, path=extract_sheet_dir.name)
+        file.close() # Close file to free space disk now
+        
+        # Move file
+        file_source = os.path.join(extract_sheet_dir.name, sheet_name_to_extract_and_move)
+        file_dest = os.path.join(template_workbook_extract_dir.name, "xl/worksheets/sheet{id}.xml".format(id = idx))
+        os.replace(file_source, file_dest)
+
+    # Build the final excel file
+    logger.info("Creating the final excel file...")
+    with zipfile.ZipFile(xlsx_abs_path, 'w', ZIP_DEFLATED, allowZip64=True) as archive:
+        for root, dirs, files in os.walk(template_workbook_extract_dir.name):
+            for file in files:
+                archive.write(os.path.join(root, file), 
+                        os.path.relpath(os.path.join(root, file), 
+                                        os.path.join(template_workbook_extract_dir.name, '.')))
+
+    logger.info("Done writing output xlsx file.")
