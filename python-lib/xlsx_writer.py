@@ -96,7 +96,13 @@ class StyleCached:
         self.alignment = copy(alignment)
 
     def __eq__(self, cell: Cell):
-       return cell.fill.__eq__(self.fill) and cell.alignment.__eq__(self.alignment) and cell.number_format.__eq__(self.number_format) and cell.border.__eq__(self.border) and cell.font.__eq__(self.font)
+       return (cell.fill.__eq__(self.fill)
+               and cell.font.__eq__(self.font)
+               and cell.alignment.__eq__(self.alignment)
+               and cell.number_format.__eq__(self.number_format)
+               # 1 border all the time so not needed to check the line below
+               # and cell.border.__eq__(self.border) 
+        )
 
 style_cache = []
 def get_style_cached(cell: Cell):
@@ -215,7 +221,6 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
 
         workbook_tmp_files.append(tempfile.NamedTemporaryFile())
         temp_workbook.save(workbook_tmp_files[-1].name)
-
         # Free memory
         del temp_sheet
         temp_workbook.close()
@@ -259,5 +264,30 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
                 archive.write(os.path.join(root, file), 
                         os.path.relpath(os.path.join(root, file), 
                                         os.path.join(template_workbook_extract_dir.name, '.')))
+                
+    print_cache()
 
     logger.info("Done writing output xlsx file.")
+
+def print_cache():
+    fonts = []
+    borders = []
+    fills = []
+    number_formats = []
+    alignments = []
+
+    def add_style_if_not_exist(style, list):
+        if list:
+            for s in list:
+                if s.__eq__(style):
+                    return
+        list.append(style)
+
+    for cache in style_cache:
+        add_style_if_not_exist(cache.font, fonts)
+        add_style_if_not_exist(cache.border, borders)
+        add_style_if_not_exist(cache.fill, fills)
+        add_style_if_not_exist(cache.alignment, alignments)
+        add_style_if_not_exist(cache.number_format, number_formats)
+
+    logger.info(f"Style counts (fonts: {len(fonts)}; borders: {len(borders)}; fills: {len(fills)}; alignments: {len(alignments)}; number_formats: {len(number_formats)})")
