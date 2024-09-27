@@ -42,10 +42,10 @@ def get_excel_worksheet(dataset: dataiku.Dataset, apply_conditional_formatting: 
         if DEFAULT_DATAIKU_SHEET_NAME in workbook:
             return workbook[DEFAULT_DATAIKU_SHEET_NAME]
         elif len(workbook.sheetnames) == 1:
-            logger.warn(f"Default DSS default sheet name has changed from '{DEFAULT_DATAIKU_SHEET_NAME}' to '{workbook.sheetnames[0]}'")
+            logger.warning(f"Default DSS default sheet name has changed from '{DEFAULT_DATAIKU_SHEET_NAME}' to '{workbook.sheetnames[0]}'")
             return workbook[workbook.sheetnames[0]]
 
-    logger.error("Error getting Excel workbook from DSS dataset '{dataset.short_name}', this dataset will not be exported")
+    logger.error(f"Error getting Excel workbook from DSS dataset '{dataset.short_name}', this dataset will not be exported")
     return None
 
 

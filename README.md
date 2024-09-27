@@ -12,7 +12,7 @@ This plugin relies on the [openpyxl](https://openpyxl.readthedocs.io/en/stable/)
 
 Once the plugin is successfully installed, select the datasets that you want to export as one excel file. 
 Then run the Multi-Sheet Excel Export recipe from the flow. 
-It will create a folder in your flow containing the output `.xls` file. Each sheet of this file contains one dataset and is named after this dataset.
+It will create a folder in your flow containing the output `.xlsx` file. Each sheet of this file contains one dataset and is named after this dataset.
  
 ## Running tests
 

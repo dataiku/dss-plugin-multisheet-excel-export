@@ -67,7 +67,7 @@ def auto_size_column_width(worksheet: Worksheet):
     Resize columns based on the length of the header text
     """
     if worksheet.min_column < 1:
-        logger.warn(f"No header row for worksheet '{worksheet}'. Column auto-size skipped.")
+        logger.warning(f"No header row for worksheet '{worksheet}'. Column auto-size skipped.")
         return
 
     dimension_holder = DimensionHolder(worksheet=worksheet) 
@@ -131,7 +131,7 @@ def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -
     :param target_workbook: the workbook used to store the new sheet
     :return: a reference to the created sheet inside the workbook
     """
-    logger.info(f"Copying sheet '{source_sheet.title}' to target workbook...")
+    logger.info(f"Copying sheet '{source_sheet.title}' to target workbook ({source_sheet.max_column} columns; {source_sheet.max_row} rows)...")
     target_sheet = target_workbook.create_sheet(source_sheet.title)
     for row in source_sheet:
         for cell in row:
@@ -177,13 +177,38 @@ def rename_too_long_dataset_names(input_dataset_names: List[str]) -> Dict[str, s
 
 def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     """
-    Write each input dataset into one temporary excel and merge all these excel into the final excel file
+    Write each input dataset into one temporary excel file and merge all these excel files into the final excel file
     :param input_dataset_names: the list of dataset, using one temporary workbook per dataset
     :param xlsx_abs_path: the temporary path where to write the final excel file
     :param worksheet_provider: a lambda used to get the dataset worksheet
     """
 
     logger.info(f"Building output excel file '{xlsx_abs_path}'...")
+
+    template_workbook, workbook_tmp_files = get_temporary_workbooks(input_dataset_names, worksheet_provider)
+
+    # Save template workbook with styles and unzip it
+    template_workbook_extract_dir = get_template_workbook_directory(template_workbook)
+
+    # Move sheets into template workbook directory
+    extract_and_move_temporary_worksheets_into_workbook_directory(workbook_tmp_files, template_workbook_extract_dir)
+
+    # Build the final excel file
+    logger.info("Creating the final excel file...")         
+    zip_directory(template_workbook_extract_dir.name, xlsx_abs_path)
+                
+    print_cache()
+
+    logger.info("Done writing output xlsx file.")
+
+def get_temporary_workbooks(input_dataset_names, worksheet_provider):
+    """
+    Create a template workbook and one temporary workbook per dataset stored on disk
+    :param input_dataset_names: the list of dataset, using one temporary workbook per dataset
+    :param worksheet_provider: a lambda used to get the dataset worksheet
+    :return a template workbook containing styles and empty workhsheets
+    :return a list of temporary workbook file names (one file per dataset)
+    """
     # A template workbook to store styles thanks to the cache
     template_workbook = Workbook()
     # remove the default sheet created
@@ -203,7 +228,7 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
             dataset_worksheet.title = renaming_map[name]
         else:
             # should never happen
-            logger.warn(f"Failed to find a name for the worksheet '{name}'")
+            logger.warning(f"Failed to find a name for the worksheet '{name}'")
             dataset_worksheet.title = name
 
         # Add an empty sheet in the template just to have the name of the dataset
@@ -228,7 +253,15 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
 
         logger.info(f"Finished writing dataset '{name}' temporary workbook.")
 
-    # Save template workbook and unzip it
+    return template_workbook, workbook_tmp_files
+
+
+def get_template_workbook_directory(template_workbook):
+    """
+    Save the template workbook with styles and unzip it into a temporary directory
+    :param template_workbook: the template workbook to save and extract into a temporary directory
+    :return a temporary directory
+    """
     template_workbook_extract_dir = tempfile.TemporaryDirectory()
     with tempfile.NamedTemporaryFile() as template_workbook_file:
         # Add styles to template workbook before saving it
@@ -240,9 +273,18 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
         
         logger.info("Extracting template workbook...")
         with zipfile.ZipFile(template_workbook_file.name, mode="r") as zipFile:
-            zipFile.extractall(path=template_workbook_extract_dir.name) 
+            zipFile.extractall(path=template_workbook_extract_dir.name)
 
+    return template_workbook_extract_dir
+
+def extract_and_move_temporary_worksheets_into_workbook_directory(workbook_tmp_files, template_workbook_extract_dir):
+    """
+    Extract and move temporary worksheets into a workbook directory
+    :param workbook_tmp_files: list of temporary files to extract and move
+    :param template_workbook_extract_dir: the workbook directory
+    """
     logger.info("Extracting and moving temporary sheets...")
+
     # Extract the sheet2.xml only because sheet1.xml is just for keeping style indexes
     sheet_name_to_extract_and_move = "xl/worksheets/sheet2.xml"
     for idx, file in enumerate(workbook_tmp_files, 1):
@@ -256,20 +298,22 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
         file_dest = os.path.join(template_workbook_extract_dir.name, "xl/worksheets/sheet{id}.xml".format(id = idx))
         os.replace(file_source, file_dest)
 
-    # Build the final excel file
-    logger.info("Creating the final excel file...")
-    with zipfile.ZipFile(xlsx_abs_path, 'w', ZIP_DEFLATED, allowZip64=True) as archive:
-        for root, dirs, files in os.walk(template_workbook_extract_dir.name):
+def zip_directory(dir_name, output_path_file_name):
+    """
+    Zip a directory into an archive
+    :param dir_name: the directory to zip
+    :param output_path_file_name: the path file name of the archive
+    """
+    with zipfile.ZipFile(output_path_file_name, 'w', ZIP_DEFLATED, allowZip64=True) as archive:
+        for root, dirs, files in os.walk(dir_name):
             for file in files:
                 archive.write(os.path.join(root, file), 
-                        os.path.relpath(os.path.join(root, file), 
-                                        os.path.join(template_workbook_extract_dir.name, '.')))
-                
-    print_cache()
-
-    logger.info("Done writing output xlsx file.")
+                        os.path.relpath(os.path.join(root, file), os.path.join(dir_name, '.')))
 
 def print_cache():
+    """
+    Print the counts of each style of the cache
+    """
     fonts = []
     borders = []
     fills = []
