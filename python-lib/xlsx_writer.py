@@ -15,7 +15,7 @@ import zipfile
 from typing import Tuple, List, Dict
 from copy import copy
 
-from openpyxl.cell import Cell
+from openpyxl.cell import Cell, WriteOnlyCell
 from openpyxl.styles import Alignment, Border, Fill, Font
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
@@ -64,25 +64,25 @@ def get_column_width(column: Tuple):
     return length_to_show * LETTER_WIDTH
 
 
-def auto_size_column_width(worksheet: Worksheet):
+def auto_size_column_width(source_worksheet: Worksheet, target_worksheet: Worksheet):
     """
     Resize columns based on the length of the header text
     """
-    if worksheet.min_column < 1:
-        logger.warning(f"No header row for worksheet '{worksheet}'. Column auto-size skipped.")
+    if source_worksheet.min_column < 1:
+        logger.warning(f"No header row for worksheet '{source_worksheet}'. Column auto-size skipped.")
         return
 
-    dimension_holder = DimensionHolder(worksheet=worksheet)
+    dimension_holder = DimensionHolder(worksheet=source_worksheet)
 
-    column_indexes = range(worksheet.min_column, worksheet.max_column + 1)
-    for index_column, column in zip(column_indexes, worksheet.iter_cols()):
+    column_indexes = range(source_worksheet.min_column, source_worksheet.max_column + 1)
+    for index_column, column in zip(column_indexes, source_worksheet.iter_cols()):
 
         column_width = get_column_width(column)
-        dimension_holder[get_column_letter(index_column)] = ColumnDimension(worksheet,
+        dimension_holder[get_column_letter(index_column)] = ColumnDimension(source_worksheet,
                                                                             min=index_column,
                                                                             max=index_column,
                                                                             width=column_width)
-    worksheet.column_dimensions = dimension_holder
+    target_worksheet.column_dimensions = dimension_holder
 
 
 class StyleCached:
@@ -120,12 +120,24 @@ def get_style_cached(cell: Cell):
 def add_styles_to_worksheet(worksheet: Worksheet):
     logger.info(f"Adding {len(style_cache)} styles into '{worksheet.title}' worksheet...")
     for id, cache in enumerate(style_cache, 1):
-        new_cell = worksheet.cell(row=id, column=1, value="style")
+        new_cell = worksheet.cell(row=id, column=1, value="style {}".format(id))
         new_cell.font = cache.font
         new_cell.border = cache.border
         new_cell.fill = cache.fill
         new_cell.number_format = cache.number_format
         new_cell.alignment = cache.alignment
+
+
+def add_styles_to_worksheet_write_only(worksheet: Worksheet):
+    logger.info(f"Adding {len(style_cache)} styles into worksheet...")
+    for id, cache in enumerate(style_cache, 1):
+        new_cell = WriteOnlyCell(worksheet, value="style {}".format(id))
+        new_cell.font = cache.font
+        new_cell.border = cache.border
+        new_cell.fill = cache.fill
+        new_cell.number_format = cache.number_format
+        new_cell.alignment = cache.alignment
+        worksheet.append([new_cell])
 
 
 # code inspired from https://openpyxl.readthedocs.io/en/stable/_modules/openpyxl/worksheet/copier.html
@@ -138,9 +150,13 @@ def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -
     """
     logger.info(f"Copying sheet '{source_sheet.title}' to target workbook ({source_sheet.max_column} columns; {source_sheet.max_row} rows)...")
     target_sheet = target_workbook.create_sheet(source_sheet.title)
+
+    auto_size_column_width(source_sheet, target_sheet)
+
     for row in source_sheet:
+        cells = []
         for cell in row:
-            new_cell = target_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
+            new_cell = WriteOnlyCell(target_sheet, value=cell.value)
             new_cell.data_type = cell.data_type
             if cell.has_style:
                 cache = get_style_cached(cell)
@@ -149,6 +165,8 @@ def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -
                 new_cell.fill = cache.fill
                 new_cell.number_format = cache.number_format
                 new_cell.alignment = cache.alignment
+            cells.append(new_cell)
+        target_sheet.append(cells)
 
     return target_sheet
 
@@ -245,12 +263,12 @@ def get_temporary_workbooks(input_dataset_names, worksheet_provider):
 
         # Create a temporary workbook to save it on disk in order to avoid out of memory
         logger.info(f"Creating dataset '{name}' temporary workbook...")
-        temp_workbook = Workbook()
+        temp_workbook = Workbook(write_only=True)
         # Add previous styles in the default sheet (sheet1.xml) to keep indexes for the final excel file
-        add_styles_to_worksheet(temp_workbook.active)
+        style_sheet = temp_workbook.create_sheet("styles")
+        add_styles_to_worksheet_write_only(style_sheet)
         temp_sheet = copy_sheet_to_workbook(dataset_worksheet, temp_workbook)
         logger.info(f"Styling excel sheet '{temp_sheet.title}' in temporary worksheet...")
-        auto_size_column_width(temp_sheet)
 
         workbook_tmp_files.append(tempfile.NamedTemporaryFile())
         temp_workbook.save(workbook_tmp_files[-1].name)

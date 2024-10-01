@@ -2,7 +2,7 @@
 
 ## [Version 2.1.0](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.1.0) - Major release - 2024-09
 - Bug fix: one temporary workbook is used per dataset to avoid out of memory issues while exporting large datasets. All these temporary workbooks are merged at the end to generate the final excel file
-- Optimization: using of a cache for styles to avoid useless copies decreasing the execution time about 30-40%
+- Optimizations: using of a cache for styles to avoid useless copies + openpyxl write only mode with lxml
 
 ## [Version 2.0.0](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.0.0) - Major release - 2024-07
 - Important : Column type changed ! From this version, cell types in excel will reflect the storage type in DSS. For example, string column containing only numbers will be exported as text column. If you want a number column in excel, you need to have a integer/float column on DSS
