@@ -17,8 +17,6 @@ from copy import copy
 
 from openpyxl.cell import Cell
 from openpyxl.styles import Alignment, Border, Fill, Font
-from openpyxl.styles.borders import Border
-from openpyxl.styles.colors import WHITE
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 from openpyxl.worksheet.worksheet import Worksheet
@@ -26,12 +24,15 @@ from openpyxl import Workbook
 from zipfile import ZIP_DEFLATED
 
 DATAIKU_TEAL = "FF2AB1AC"
-LETTER_WIDTH = 1.20 # Approximative letter width to scale column width
-MAX_LENGTH_TO_SHOW = 45 # Limit copied from DSS native excel exporter
+LETTER_WIDTH = 1.20  # Approximative letter width to scale column width
+MAX_LENGTH_TO_SHOW = 45  # Limit copied from DSS native excel exporter
 EXCEL_MAX_LEN_SHEET_NAME = 31
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
+
+style_cache = []
+
 
 def get_column_width(column: Tuple):
     """
@@ -52,15 +53,16 @@ def get_column_width(column: Tuple):
     # Computations from ExcelOutputFormatter.java ExcelOutputFormatter.footer
     average_length_cell = math.ceil(sum_length_cells / (len(column) + 1))
     max_length_cells = min(max_length_cells, MAX_LENGTH_TO_SHOW)
-    
-    if max_length_cells > 2 * average_length_cell: # if max length much bigger than average
+
+    if max_length_cells > 2 * average_length_cell:  # if max length much bigger than average
         length_to_show = int((max_length_cells + average_length_cell) / 2)
     else:
         length_to_show = max_length_cells
 
-    length_to_show = max(length_to_show, length_header) 
+    length_to_show = max(length_to_show, length_header)
 
     return length_to_show * LETTER_WIDTH
+
 
 def auto_size_column_width(worksheet: Worksheet):
     """
@@ -70,17 +72,18 @@ def auto_size_column_width(worksheet: Worksheet):
         logger.warning(f"No header row for worksheet '{worksheet}'. Column auto-size skipped.")
         return
 
-    dimension_holder = DimensionHolder(worksheet=worksheet) 
+    dimension_holder = DimensionHolder(worksheet=worksheet)
 
     column_indexes = range(worksheet.min_column, worksheet.max_column + 1)
     for index_column, column in zip(column_indexes, worksheet.iter_cols()):
 
         column_width = get_column_width(column)
-        dimension_holder[get_column_letter(index_column)] = ColumnDimension(worksheet, 
-                                                           min=index_column, 
-                                                           max=index_column,
-                                                           width=column_width)
+        dimension_holder[get_column_letter(index_column)] = ColumnDimension(worksheet,
+                                                                            min=index_column,
+                                                                            max=index_column,
+                                                                            width=column_width)
     worksheet.column_dimensions = dimension_holder
+
 
 class StyleCached:
     def __init__(self,
@@ -96,22 +99,23 @@ class StyleCached:
         self.alignment = copy(alignment)
 
     def __eq__(self, cell: Cell):
-       return (cell.fill.__eq__(self.fill)
-               and cell.font.__eq__(self.font)
-               and cell.alignment.__eq__(self.alignment)
-               and cell.number_format.__eq__(self.number_format)
-               # 1 border all the time so not needed to check the line below
-               # and cell.border.__eq__(self.border) 
-        )
+        return (cell.fill == self.fill
+                and cell.font == self.font
+                and cell.alignment == self.alignment
+                and cell.number_format == self.number_format
+                # 1 border all the time so not needed to check the line below
+                # and cell.border == self.border
+                )
 
-style_cache = []
+
 def get_style_cached(cell: Cell):
     for cache in style_cache:
-        if cache.__eq__(cell):
+        if cache == cell:
             return cache
     cache = StyleCached(cell.font, cell.border, cell.fill, cell.number_format, cell.alignment)
     style_cache.append(cache)
     return cache
+
 
 def add_styles_to_worksheet(worksheet: Worksheet):
     logger.info(f"Adding {len(style_cache)} styles into '{worksheet.title}' worksheet...")
@@ -122,6 +126,7 @@ def add_styles_to_worksheet(worksheet: Worksheet):
         new_cell.fill = cache.fill
         new_cell.number_format = cache.number_format
         new_cell.alignment = cache.alignment
+
 
 # code inspired from https://openpyxl.readthedocs.io/en/stable/_modules/openpyxl/worksheet/copier.html
 def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -> Worksheet:
@@ -146,6 +151,7 @@ def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -
                 new_cell.alignment = cache.alignment
 
     return target_sheet
+
 
 def rename_too_long_dataset_names(input_dataset_names: List[str]) -> Dict[str, str]:
     """
@@ -175,6 +181,7 @@ def rename_too_long_dataset_names(input_dataset_names: List[str]) -> Dict[str, s
 
     return return_map
 
+
 def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     """
     Write each input dataset into one temporary excel file and merge all these excel files into the final excel file
@@ -194,12 +201,13 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     extract_and_move_temporary_worksheets_into_workbook_directory(workbook_tmp_files, template_workbook_extract_dir)
 
     # Build the final excel file
-    logger.info("Creating the final excel file...")         
+    logger.info("Creating the final excel file...")
     zip_directory(template_workbook_extract_dir.name, xlsx_abs_path)
-                
+
     print_cache()
 
     logger.info("Done writing output xlsx file.")
+
 
 def get_temporary_workbooks(input_dataset_names, worksheet_provider):
     """
@@ -218,7 +226,7 @@ def get_temporary_workbooks(input_dataset_names, worksheet_provider):
     workbook_tmp_files = []
 
     renaming_map = rename_too_long_dataset_names(input_dataset_names)
-    
+
     for name in input_dataset_names:
         dataset_worksheet = worksheet_provider(name)
         if dataset_worksheet is None:
@@ -234,7 +242,7 @@ def get_temporary_workbooks(input_dataset_names, worksheet_provider):
         # Add an empty sheet in the template just to have the name of the dataset
         # This sheet will be replaced during the moving step
         template_workbook.create_sheet(dataset_worksheet.title)
-  
+
         # Create a temporary workbook to save it on disk in order to avoid out of memory
         logger.info(f"Creating dataset '{name}' temporary workbook...")
         temp_workbook = Workbook()
@@ -270,12 +278,13 @@ def get_template_workbook_directory(template_workbook):
 
         template_workbook.save(template_workbook_file.name)
         template_workbook.close()
-        
+
         logger.info("Extracting template workbook...")
         with zipfile.ZipFile(template_workbook_file.name, mode="r") as zipFile:
             zipFile.extractall(path=template_workbook_extract_dir.name)
 
     return template_workbook_extract_dir
+
 
 def extract_and_move_temporary_worksheets_into_workbook_directory(workbook_tmp_files, template_workbook_extract_dir):
     """
@@ -291,12 +300,13 @@ def extract_and_move_temporary_worksheets_into_workbook_directory(workbook_tmp_f
         extract_sheet_dir = tempfile.TemporaryDirectory()
         with zipfile.ZipFile(file.name, mode="r") as zipFile:
             zipFile.extract(sheet_name_to_extract_and_move, path=extract_sheet_dir.name)
-        file.close() # Close file to free space disk now
-        
+        file.close()  # Close file to free space disk now
+
         # Move file
         file_source = os.path.join(extract_sheet_dir.name, sheet_name_to_extract_and_move)
-        file_dest = os.path.join(template_workbook_extract_dir.name, "xl/worksheets/sheet{id}.xml".format(id = idx))
+        file_dest = os.path.join(template_workbook_extract_dir.name, "xl/worksheets/sheet{id}.xml".format(id=idx))
         os.replace(file_source, file_dest)
+
 
 def zip_directory(dir_name, output_path_file_name):
     """
@@ -307,8 +317,9 @@ def zip_directory(dir_name, output_path_file_name):
     with zipfile.ZipFile(output_path_file_name, 'w', ZIP_DEFLATED, allowZip64=True) as archive:
         for root, dirs, files in os.walk(dir_name):
             for file in files:
-                archive.write(os.path.join(root, file), 
-                        os.path.relpath(os.path.join(root, file), os.path.join(dir_name, '.')))
+                archive.write(os.path.join(root, file),
+                              os.path.relpath(os.path.join(root, file), os.path.join(dir_name, '.')))
+
 
 def print_cache():
     """
@@ -323,7 +334,7 @@ def print_cache():
     def add_style_if_not_exist(style, list):
         if list:
             for s in list:
-                if s.__eq__(style):
+                if s == style:
                     return
         list.append(style)
 
@@ -334,4 +345,8 @@ def print_cache():
         add_style_if_not_exist(cache.alignment, alignments)
         add_style_if_not_exist(cache.number_format, number_formats)
 
-    logger.info(f"Style counts (fonts: {len(fonts)}; borders: {len(borders)}; fills: {len(fills)}; alignments: {len(alignments)}; number_formats: {len(number_formats)})")
+    logger.info("Style counts (fonts: {}; borders: {}; fills: {}; alignments: {}; number_formats: {})".format(len(fonts),
+                                                                                                              len(borders),
+                                                                                                              len(fills),
+                                                                                                              len(alignments),
+                                                                                                              len(number_formats)))
