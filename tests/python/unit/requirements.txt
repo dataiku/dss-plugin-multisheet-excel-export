@@ -1,4 +1,4 @@
-pandas==3.1
+pandas==1.5.3
 pytest~=8.3
 allure-pytest==2.13.2
 xlrd
