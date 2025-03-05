@@ -171,7 +171,7 @@ def copy_sheet_to_workbook(source_sheet: Worksheet, target_workbook: Workbook) -
     return target_sheet
 
 
-def rename_too_long_dataset_names(input_dataset_names: List[str]) -> Dict[str, str]:
+def rename_too_long_dataset_names(input_dataset_names: List[str], dataset_to_sheet_mapping={}) -> Dict[str, str]:
     """
     Excel allows for only maximum 30 chars in the sheet names, so if some DS have more than 30 chars :
         - truncate the name to 28 chars
@@ -184,7 +184,9 @@ def rename_too_long_dataset_names(input_dataset_names: List[str]) -> Dict[str, s
     index_rename = -1
     renaming_length = EXCEL_MAX_LEN_SHEET_NAME - 2
     for name in input_dataset_names:
-        if len(name) > EXCEL_MAX_LEN_SHEET_NAME:
+        if name in dataset_to_sheet_mapping:
+            return_map[name] = dataset_to_sheet_mapping.get(name)
+        elif len(name) > EXCEL_MAX_LEN_SHEET_NAME:
             index_rename += 1
             rename = f"{name[0:renaming_length]}{index_rename:02d}"
             # Almost impossible case : a DS already has this name
@@ -200,7 +202,7 @@ def rename_too_long_dataset_names(input_dataset_names: List[str]) -> Dict[str, s
     return return_map
 
 
-def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
+def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider, dataset_to_sheet_mapping={}):
     """
     Write each input dataset into one temporary excel file and merge all these excel files into the final excel file
     :param input_dataset_names: the list of dataset, using one temporary workbook per dataset
@@ -210,7 +212,7 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
 
     logger.info(f"Building output excel file '{xlsx_abs_path}'...")
 
-    template_workbook, workbook_tmp_files = get_temporary_workbooks(input_dataset_names, worksheet_provider)
+    template_workbook, workbook_tmp_files = get_temporary_workbooks(input_dataset_names, worksheet_provider, dataset_to_sheet_mapping=dataset_to_sheet_mapping)
 
     # Save template workbook with styles and unzip it
     template_workbook_extract_dir = get_template_workbook_directory(template_workbook)
@@ -227,7 +229,7 @@ def datasets_to_xlsx(input_dataset_names, xlsx_abs_path, worksheet_provider):
     logger.info("Done writing output xlsx file.")
 
 
-def get_temporary_workbooks(input_dataset_names, worksheet_provider):
+def get_temporary_workbooks(input_dataset_names, worksheet_provider, dataset_to_sheet_mapping={}):
     """
     Create a template workbook and one temporary workbook per dataset stored on disk
     :param input_dataset_names: the list of dataset, using one temporary workbook per dataset
@@ -243,7 +245,7 @@ def get_temporary_workbooks(input_dataset_names, worksheet_provider):
     # List containing all temporary workbooks generated from dataset
     workbook_tmp_files = []
 
-    renaming_map = rename_too_long_dataset_names(input_dataset_names)
+    renaming_map = rename_too_long_dataset_names(input_dataset_names, dataset_to_sheet_mapping=dataset_to_sheet_mapping)
 
     for name in input_dataset_names:
         dataset_worksheet = worksheet_provider(name)
@@ -368,3 +370,8 @@ def print_cache():
                                                                                                               len(fills),
                                                                                                               len(alignments),
                                                                                                               len(number_formats)))
+
+
+def assert_valid_sheet_name(sheet_name):
+    if sheet_name is not None and len(sheet_name) > EXCEL_MAX_LEN_SHEET_NAME:
+        raise Exception("The sheet name '{}' is too long. Maximum is {} characters".format(sheet_name, EXCEL_MAX_LEN_SHEET_NAME))

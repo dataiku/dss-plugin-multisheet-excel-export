@@ -14,7 +14,7 @@ from dataiku.customrecipe import get_input_names_for_role
 from dataiku.customrecipe import get_output_names_for_role
 from dataiku.customrecipe import get_recipe_config
 from openpyxl import load_workbook, Workbook
-from xlsx_writer import datasets_to_xlsx
+from xlsx_writer import datasets_to_xlsx, assert_valid_sheet_name
 from typing import Union
 
 DEFAULT_DATAIKU_SHEET_NAME = "Sheet1"
@@ -50,6 +50,20 @@ def get_excel_worksheet(dataset: dataiku.Dataset, apply_conditional_formatting: 
     return None
 
 
+def get_dataset_to_sheet_mapping(config):
+    renaming_sheets = config.get("renaming_sheets", False)
+    dataset_to_sheet_mapping = {}
+    if renaming_sheets:
+        dataset_to_sheet_mappings = config.get("dataset_to_sheet_mapping", {})
+        for mapping in dataset_to_sheet_mappings:
+            dataset_name = mapping.get("dataset_name")
+            sheet_name = mapping.get("sheet_name")
+            assert_valid_sheet_name(sheet_name)
+            dataset_to_sheet_mapping[dataset_name] = sheet_name
+            logger.info("Renaming dataset '{}' into sheet '{}'".format(dataset_name, sheet_name))
+    return dataset_to_sheet_mapping
+
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Multi-Sheet Excel Exporter | %(levelname)s - %(message)s')
 
@@ -72,6 +86,7 @@ output_folder = dataiku.Folder(output_folder_name)
 input_config = get_recipe_config()
 workbook_name = input_config.get('output_workbook_name', None)
 apply_conditional_formatting = input_config.get('export_conditional_formatting', False)
+dataset_to_sheet_mapping = get_dataset_to_sheet_mapping(input_config)
 
 if workbook_name is None:
     logger.warning("Received input received recipe config: {}".format(input_config))
@@ -89,7 +104,12 @@ with tempfile.NamedTemporaryFile() as tmp_file:
     tmp_file_path = tmp_file.name
     logger.info("Intend to write the output xls file to the following location: {}".format(tmp_file_path))
 
-    datasets_to_xlsx(input_datasets_names, tmp_file_path, lambda name: get_excel_worksheet(dataiku.Dataset(name), apply_conditional_formatting))
+    datasets_to_xlsx(
+        input_datasets_names,
+        tmp_file_path,
+        lambda name: get_excel_worksheet(dataiku.Dataset(name), apply_conditional_formatting),
+        dataset_to_sheet_mapping=dataset_to_sheet_mapping
+    )
 
     with open(tmp_file_path, 'rb', encoding=None) as f:
         output_folder.upload_stream(output_file_name, f)

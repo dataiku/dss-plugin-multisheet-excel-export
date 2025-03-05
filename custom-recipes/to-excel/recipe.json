@@ -45,6 +45,34 @@
             "type": "BOOLEAN",
             "defaultValue": false,
             "mandatory": true
+        },
+        {
+            "name": "renaming_sheets",
+            "label": "Renaming the sheets",
+            "description": "Name the sheets rather than use the datasets names",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
+            "name": "dataset_to_sheet_mapping",
+            "label": "Sheet name",
+            "description": "",
+            "type": "OBJECT_LIST",
+            "visibilityCondition": "model.renaming_sheets == true",
+            "subParams": [
+                {
+                    "name": "dataset_name",
+                    "type": "DATASET",
+                    "label": "Dataset",
+                    "description": "To be valid, the dataset has to be selected in the recipe's input"
+                },
+                {
+                    "name": "sheet_name",
+                    "type": "STRING",
+                    "label": "Sheet name",
+                    "description": "Name of the targeted sheet for this dataset"
+                }
+            ]
         }
     ],
     "resourceKeys" : []

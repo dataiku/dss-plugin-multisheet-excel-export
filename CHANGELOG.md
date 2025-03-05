@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.2.0](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.2.0) - Major release - 2025-02
+
+- Add customization of tab names
+
 ## [Version 2.1.0](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.1.0) - Major release - 2024-09
 - Bug fix: one temporary workbook is used per dataset to avoid out of memory issues while exporting large datasets. All these temporary workbooks are merged at the end to generate the final excel file
 - Optimizations: using of a cache for styles to avoid useless copies + openpyxl write only mode with lxml
