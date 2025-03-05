@@ -373,5 +373,5 @@ def print_cache():
 
 
 def assert_valid_sheet_name(sheet_name):
-    if len(sheet_name) > EXCEL_MAX_LEN_SHEET_NAME:
+    if sheet_name is not None and len(sheet_name) > EXCEL_MAX_LEN_SHEET_NAME:
         raise Exception("The sheet name '{}' is too long. Maximum is {} characters".format(sheet_name, EXCEL_MAX_LEN_SHEET_NAME))
