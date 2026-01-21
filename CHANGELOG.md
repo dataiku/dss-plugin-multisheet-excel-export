@@ -1,7 +1,9 @@
 # Changelog
 
-## [Version 2.2.0](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.2.0) - Major release - 2025-02
+## [Version 2.2.1](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.2.1) - Minor release - 2026-01
+- Updated plugin to python 3.12
 
+## [Version 2.2.0](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.2.0) - Major release - 2025-02
 - Add customization of tab names
 
 ## [Version 2.1.0](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.1.0) - Major release - 2024-09
