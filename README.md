@@ -1,27 +1,28 @@
-# Multisheet excel export Plugin
+# Multisheet excel export
 
-This plugin converts several DSS datasets to one multi-sheet excel (`.xlsx`) file containing one sheet per input dataset.
-More information in the [Documentation](https://www.dataiku.com/product/plugins/multisheet-excel-export/)
+This plugin enables the export of multiple DSS datasets to a single multi-sheet excel file (*.xlsx*). For each exported dataset, there will be one sheet in the output file.
 
-# Prerequisites
+## Requirements
 
-The installation setup for this plugin follows the standard DSS code environment creation procedure.
-This plugin relies on the [openpyxl](https://openpyxl.readthedocs.io/en/stable/) Python module.
+The installation setup for this plugin follows the standard Dataiku code environment creation procedure. Through code environment creation at plugin install time, the following packages will be installed
 
-# How it works
+- openpyxl==3.0.6
+- pathvalidate==2.3.0
 
-Once the plugin is successfully installed, select the datasets that you want to export as one excel file. 
-Then run the Multi-Sheet Excel Export recipe from the flow. 
-It will create a folder in your flow containing the output `.xlsx` file. Each sheet of this file contains one dataset and is named after this dataset.
- 
-## Running tests
+## How To Use
 
-In order to run the tests contained in `python-test\`, launch the following command from the plugin root directory: 
-`PYTHONPATH=$PYTHONPATH:/path/to/python-lib pytest`
+### Export multiple DSS datasets as one multi-sheet Excel file
 
+From your flow, select the datasets you want to merge in a single Excel file,
 
-### Licence
+Click on the **Multisheet Excel Export** icon in the column at the right of the flow or from the recipe menu,
 
-Copyright 2020-2022 Dataiku SAS
+This plugin contains a single recipe that merges the input dataset in a single (multisheet) Excel worksheet,
 
-This plugin is distributed under the Apache License version 2.0
+Choose a name for the folder that will contain the output file in the flow,
+
+Choose a name for the output excel worksheet. (Do not include a file extension in this name, the extension will always be *.xlsx*)
+
+The resulting folder will appear in the flow as shown in the following screenshot,
+
+You can now click on the folder and download the *.xslsx*file.
