@@ -1,6 +1,6 @@
 {
     "id" : "multisheet-excel-export",
-    "version" : "2.2.0",
+    "version" : "2.2.1",
 
 
     "meta" : {
@@ -11,7 +11,7 @@
         "icon" : "icon-file",
         "licenseInfo" : "Apache Software License",
         "url" : "https://www.dataiku.com/product/plugins/multisheet-excel-export",
-        "tags" : ["Productivity","Excel"],
+        "tags" : ["Microsoft", "Excel", "Export"],
         "supportLevel": "NOT_SUPPORTED"
     }
 }
