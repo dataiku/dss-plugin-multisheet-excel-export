@@ -1,16 +1,6 @@
 # Cobuild guidance
 
-Use this recipe to export multiple input datasets into one Excel workbook, with one worksheet per dataset.
-
-Roles:
-- `input_dataset`: required input datasets to export. This role accepts multiple datasets.
-- `folder`: required output managed folder where the workbook is written.
-
-Core configuration:
-- Set `output_workbook_name` to the workbook name without the `.xlsx` extension.
-- Set `export_conditional_formatting=true` only when conditional formatting should be preserved in the exported sheets.
-- Keep `renaming_sheets=false` to use dataset names as worksheet names.
-- If custom worksheet names are needed, set `renaming_sheets=true` and provide `dataset_to_sheet_mapping` entries. Each entry contains `dataset_name` and `sheet_name`; `dataset_name` must be one of the selected input datasets.
-
-Output behavior:
-- The recipe writes `output_workbook_name + ".xlsx"` to the output managed folder.
+Workbook behavior:
+- The recipe creates one worksheet per `input_dataset` and uses dataset names as worksheet names unless a custom mapping overrides them.
+- Set `output_workbook_name` without an extension; the recipe appends `.xlsx` when writing the workbook.
+- When `renaming_sheets=true`, each `dataset_to_sheet_mapping` entry has the shape `{"dataset_name":"<input dataset>","sheet_name":"<worksheet name>"}`. Each `dataset_name` must identify one of the selected inputs; inputs without a mapping keep their default worksheet names.
