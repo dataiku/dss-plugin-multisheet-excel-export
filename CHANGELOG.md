@@ -1,5 +1,8 @@
 # Changelog
 
+## [Version 2.3.0](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.3.0) - Feature release - 2026-08
+- Add Cobuild support to the ontology tagging recipe
+
 ## [Version 2.2.1](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.2.1) - Minor release - 2026-01
 - Updated plugin to python 3.12 and 3.13
 

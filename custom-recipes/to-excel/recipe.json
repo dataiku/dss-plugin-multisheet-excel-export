@@ -6,6 +6,9 @@
     },
 
     "kind" : "PYTHON",
+    "cobuild": {
+        "supported": true
+    },
     "selectableFromDataset": "input_dataset",
 
     "inputRoles" : [
@@ -34,6 +37,7 @@
         {
             "name": "output_workbook_name",
             "label": "Name of the Excel Workbook",
+            "description": "Name of the output file without an extension. The recipe appends .xlsx automatically.",
             "type": "STRING",
             "defaultValue": "output",
             "mandatory": true
