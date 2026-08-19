@@ -1,5 +1,10 @@
 # Changelog
 
+## [Version 2.4.0](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.4.0) - Feature release - 2026-08
+- Adds support for Python 3.14
+- Updates lxml v5.3.0 -> v6.1.1
+
+
 ## [Version 2.3.0](https://github.com/dataiku/dss-plugin-multisheet-excel-export/releases/tag/v2.3.0) - Feature release - 2026-08
 - Add Cobuild support to the ontology tagging recipe
 
